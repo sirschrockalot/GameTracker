@@ -13,6 +13,14 @@ class UpwardLineupApp extends ConsumerWidget {
       title: 'Upward Lineup',
       theme: appTheme,
       routerConfig: goRouter,
+      debugShowCheckedModeBanner: false,
+      // Avoid pure white if something fails before first route
+      builder: (context, child) {
+        return Container(
+          color: const Color(0xFFF5F5F5),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

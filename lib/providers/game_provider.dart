@@ -38,6 +38,9 @@ final gameDetailProvider =
 /// Present player UUIDs for the upcoming game (team setup screen).
 final presentPlayerIdsProvider = StateProvider<Set<String>>((ref) => {});
 
+/// Present player Isar ids for team setup toggle (one per row; avoids duplicate-uuid issues).
+final presentPlayerIsarIdsProvider = StateProvider<Set<int>>((ref) => {});
+
 /// Current game UUID being played (dashboard).
 final currentGameUuidProvider = StateProvider<String?>((ref) => null);
 

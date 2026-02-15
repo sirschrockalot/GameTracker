@@ -74,6 +74,21 @@ class _SummaryBody extends StatelessWidget {
     return p?.name ?? '?';
   }
 
+  Color _colorForAward(AwardType cat) {
+    switch (cat) {
+      case AwardType.christlikeness:
+        return Colors.grey.shade300;
+      case AwardType.defense:
+        return Colors.red;
+      case AwardType.effort:
+        return Colors.blue;
+      case AwardType.offense:
+        return Colors.grey.shade600;
+      case AwardType.sportsmanship:
+        return AppColors.saveAwardsGold;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final date = game.startedAt;
@@ -114,6 +129,12 @@ class _SummaryBody extends StatelessWidget {
               );
             }).toList(),
           ),
+        ),
+        const SizedBox(height: 20),
+        _FairnessSummarySection(
+          played: played,
+          players: players,
+          nameForUuid: _name,
         ),
         const SizedBox(height: 20),
         _SectionCard(
@@ -160,19 +181,33 @@ class _SummaryBody extends StatelessWidget {
             children: AwardType.values.map((cat) {
               final list = awards[cat] ?? [];
               final label = switch (cat) {
-                AwardType.christlike => 'Christlike',
-                AwardType.offense => 'Offense',
+                AwardType.christlikeness => 'Christlikeness',
                 AwardType.defense => 'Defense',
-                AwardType.hustle => 'Hustle',
+                AwardType.effort => 'Effort',
+                AwardType.offense => 'Offense',
+                AwardType.sportsmanship => 'Sportsmanship',
               };
               return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '$label: ${list.isEmpty ? '—' : list.map(_name).join(', ')}',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                  ),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.star,
+                      size: 18,
+                      color: _colorForAward(cat),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$label: ${list.isEmpty ? '—' : list.map(_name).join(', ')}',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }).toList(),
@@ -188,6 +223,157 @@ class _SummaryBody extends StatelessWidget {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return months[m - 1];
+  }
+}
+
+class _FairnessSummarySection extends StatelessWidget {
+  const _FairnessSummarySection({
+    required this.played,
+    required this.players,
+    required this.nameForUuid,
+  });
+
+  final Map<String, int> played;
+  final List<Player> players;
+  final String Function(String) nameForUuid;
+
+  Color _statusColor(int diff) {
+    if (diff <= 0) return AppColors.onCourtGreen;
+    if (diff == 1) return Colors.amber;
+    return Colors.red;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final quartersList = players.map((p) => played[p.uuid] ?? 0).toList();
+    final maxQ = quartersList.isEmpty ? 0 : quartersList.reduce((a, b) => a > b ? a : b);
+    final minQ = quartersList.isEmpty ? 0 : quartersList.reduce((a, b) => a < b ? a : b);
+    final diff = maxQ - minQ;
+    final statusColor = _statusColor(diff);
+
+    return _SectionCard(
+      title: 'Fairness summary',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Table(
+            columnWidths: const {
+              0: FlexColumnWidth(2),
+              1: IntrinsicColumnWidth(),
+            },
+            children: [
+              TableRow(
+                decoration: BoxDecoration(
+                  color: AppColors.chipInactive.withValues(alpha: 0.5),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    child: Text(
+                      'Player',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    child: Text(
+                      'Quarters',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              ...players.map((p) {
+                final q = played[p.uuid] ?? 0;
+                return TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                      child: Text(
+                        nameForUuid(p.uuid),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                      child: Text(
+                        '$q',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text(
+                'Difference (max − min): ',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                '$diff',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      diff <= 0 ? 'Even' : diff == 1 ? '1 behind' : '$diff behind',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

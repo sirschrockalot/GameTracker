@@ -5,10 +5,11 @@ import 'game_serialization.dart';
 part 'game.g.dart';
 
 enum AwardType {
-  christlike,
-  offense,
+  christlikeness,
   defense,
-  hustle,
+  effort,
+  offense,
+  sportsmanship,
 }
 
 @collection
@@ -80,13 +81,20 @@ class Game {
   Map<AwardType, List<String>> get awards {
     final raw = GameSerialization.decodeAwardsRaw(awardsJson);
     final result = <AwardType, List<String>>{};
+    final oldKeyToNew = <String, AwardType>{
+      'christlike': AwardType.christlikeness,
+      'hustle': AwardType.effort,
+    };
     for (final entry in raw.entries) {
-      for (final t in AwardType.values) {
-        if (t.name == entry.key) {
-          result[t] = entry.value;
+      AwardType? t;
+      for (final e in AwardType.values) {
+        if (e.name == entry.key) {
+          t = e;
           break;
         }
       }
+      t ??= oldKeyToNew[entry.key];
+      if (t != null) result[t] = entry.value;
     }
     return result;
   }

@@ -19,11 +19,29 @@ class PlayerRepository {
     return _isar.players.filter().uuidEqualTo(uuid).findFirst();
   }
 
-  Future<Id> add(Player player) =>
-      _isar.writeTxn(() => _isar.players.put(player));
+  Future<Id> add(Player player) => _isar.writeTxn(() async {
+        final existing = await _isar.players
+            .filter()
+            .uuidEqualTo(player.uuid)
+            .findFirst();
+        if (existing != null) {
+          player.id = existing.id;
+        }
+        return _isar.players.put(player);
+      });
 
-  Future<void> update(Player player) =>
-      _isar.writeTxn(() => _isar.players.put(player));
+  Future<void> update(Player player) => _isar.writeTxn(() async {
+        if (player.id == Isar.autoIncrement) {
+          final existing = await _isar.players
+              .filter()
+              .uuidEqualTo(player.uuid)
+              .findFirst();
+          if (existing != null) {
+            player.id = existing.id;
+          }
+        }
+        await _isar.players.put(player);
+      });
 
   Future<bool> deleteByUuid(String uuid) => _isar.writeTxn(() async {
         final p = await _isar.players.filter().uuidEqualTo(uuid).findFirst();

@@ -12,8 +12,16 @@ class GameRepository {
     return _isar.games.filter().uuidEqualTo(uuid).findFirst();
   }
 
-  Future<String> createGame(Game game) =>
-      _isar.writeTxn(() => _isar.games.put(game)).then((_) => game.uuid);
+  Future<String> createGame(Game game) => _isar.writeTxn(() async {
+        final existing = await _isar.games
+            .filter()
+            .uuidEqualTo(game.uuid)
+            .findFirst();
+        if (existing != null) {
+          game.id = existing.id;
+        }
+        await _isar.games.put(game);
+      }).then((_) => game.uuid);
 
   Future<List<Game>> listGames() async {
     return _isar.games.where().sortByStartedAtDesc().findAll();

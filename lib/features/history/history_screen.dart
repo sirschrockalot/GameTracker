@@ -236,10 +236,11 @@ class _HistoryCard extends ConsumerWidget {
 
   String _awardLabel(AwardType type, String uuid, List<Player> players) {
     final cat = switch (type) {
-      AwardType.christlike => 'Christlike',
-      AwardType.offense => 'Offense',
+      AwardType.christlikeness => 'Christlikeness',
       AwardType.defense => 'Defense',
-      AwardType.hustle => 'Hustle',
+      AwardType.effort => 'Effort',
+      AwardType.offense => 'Offense',
+      AwardType.sportsmanship => 'Sportsmanship',
     };
     final p = players.where((x) => x.uuid == uuid).firstOrNull;
     final name = p?.name ?? '?';

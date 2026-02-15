@@ -9,29 +9,22 @@ class AppBottomNav extends StatelessWidget {
   final String currentPath;
 
   int get _selectedIndex {
-    switch (currentPath) {
-      case '/':
-        return 0;
-      case '/game':
-        return 1;
-      case '/awards':
-        return 2;
-      case '/history':
-        return 3;
-      default:
-        return -1;
-    }
+    if (currentPath.startsWith('/teams')) return 0;
+    if (currentPath == '/game') return 1;
+    if (currentPath == '/awards') return 2;
+    if (currentPath == '/history') return 3;
+    return -1;
   }
 
   @override
   Widget build(BuildContext context) {
     const items = [
-      (icon: Icons.groups_outlined, activeIcon: Icons.groups, label: 'Team'),
+      (icon: Icons.groups_outlined, activeIcon: Icons.groups, label: 'Teams'),
       (icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Game'),
       (icon: Icons.emoji_events_outlined, activeIcon: Icons.emoji_events, label: 'Awards'),
       (icon: Icons.schedule_outlined, activeIcon: Icons.schedule, label: 'History'),
     ];
-    const paths = ['/', '/game', '/awards', '/history'];
+    const paths = ['/teams', '/game', '/awards', '/history'];
 
     return Container(
       decoration: BoxDecoration(

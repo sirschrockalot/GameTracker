@@ -4,7 +4,7 @@ const int _defaultRequiredOnCourt = 5;
 
 const double _fairnessWeight = 1.0;
 const double _rotationWeight = 0.4;
-const double _mixWeight = 0.5;
+const double _mixWeight = 1.0;
 
 /// Result of suggesting a lineup for the next quarter.
 class Suggestion {
@@ -90,7 +90,15 @@ Suggestion suggestLineup({
         combo.where((id) => lastSittingSet.contains(id)).length / requiredOnCourt;
 
     final strongCount = combo.where((id) => idToPlayer[id]?.skill == Skill.strong).length;
-    final mixScore = (hasDeveloping && strongCount == requiredOnCourt) ? -1.0 : 0.0;
+    final developingCount = requiredOnCourt - strongCount;
+    double mixScore = 0.0;
+    if (hasDeveloping) {
+      if (strongCount == requiredOnCourt) {
+        mixScore = -1.5;
+      } else if (strongCount >= 1 && developingCount >= 1) {
+        mixScore = 0.5;
+      }
+    }
 
     final score = _fairnessWeight * fairnessScore +
         _rotationWeight * rotationScore +

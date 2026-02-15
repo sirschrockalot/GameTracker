@@ -98,7 +98,7 @@ class _AwardsScreenState extends ConsumerState<AwardsScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$totalGiven/${AppConstants.awardsPerCategory * 4} awards given',
+                            '$totalGiven/${AppConstants.awardsPerCategory * AwardType.values.length} awards given',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -131,6 +131,11 @@ class _AwardsScreenState extends ConsumerState<AwardsScreen> {
                                     ),
                                   );
                                 }),
+                                const SizedBox(height: 20),
+                                _PlayersNotYetSelected(
+                                  presentPlayers: presentPlayers,
+                                  awards: awards,
+                                ),
                                 const SizedBox(height: 24),
                                 const Padding(
                                   padding: EdgeInsets.only(left: 4, bottom: 8),
@@ -160,7 +165,7 @@ class _AwardsScreenState extends ConsumerState<AwardsScreen> {
                                   ref
                                       .read(currentGameUuidProvider.notifier)
                                       .state = null;
-                                  context.go(AppRoute.teamSetup.path);
+                                  context.go(AppRoute.teams.path);
                                 },
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.saveAwardsGold,
@@ -198,13 +203,23 @@ class _AwardsScreenState extends ConsumerState<AwardsScreen> {
     List<Player> allPlayers,
   ) async {
     final selected = List<String>.from(awards[category] ?? []);
+    final inThisCategory = (awards[category] ?? []).toSet();
+    final inOtherCategories = <String>{};
+    for (final entry in awards.entries) {
+      if (entry.key != category) {
+        inOtherCategories.addAll(entry.value);
+      }
+    }
+    final playersToShow = presentPlayers
+        .where((p) => inThisCategory.contains(p.uuid) || !inOtherCategories.contains(p.uuid))
+        .toList();
     final result = await showModalBottomSheet<List<String>>(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => _CategoryPickerSheet(
         category: category,
         selectedUuids: selected,
-        presentPlayers: presentPlayers,
+        presentPlayers: playersToShow,
         allPlayers: allPlayers,
         maxCount: AppConstants.awardsPerCategory,
       ),
@@ -239,42 +254,35 @@ class _AwardCategoryCard extends StatelessWidget {
   final List<Player> allPlayers;
   final VoidCallback onTap;
 
-  IconData get _icon {
-    switch (category) {
-      case AwardType.christlike:
-        return Icons.volunteer_activism;
-      case AwardType.offense:
-        return Icons.sports_basketball;
-      case AwardType.defense:
-        return Icons.shield_outlined;
-      case AwardType.hustle:
-        return Icons.directions_run;
-    }
-  }
+  IconData get _icon => Icons.star;
 
   Color get _color {
     switch (category) {
-      case AwardType.christlike:
-        return Colors.purple;
-      case AwardType.offense:
-        return AppColors.primaryOrange;
+      case AwardType.christlikeness:
+        return Colors.grey.shade300;
       case AwardType.defense:
         return Colors.red;
-      case AwardType.hustle:
+      case AwardType.effort:
+        return Colors.blue;
+      case AwardType.offense:
+        return Colors.grey.shade600;
+      case AwardType.sportsmanship:
         return AppColors.saveAwardsGold;
     }
   }
 
   String get _label {
     switch (category) {
-      case AwardType.christlike:
-        return 'Christlike';
-      case AwardType.offense:
-        return 'Offense';
+      case AwardType.christlikeness:
+        return 'Christlikeness';
       case AwardType.defense:
         return 'Defense';
-      case AwardType.hustle:
-        return 'Hustle';
+      case AwardType.effort:
+        return 'Effort';
+      case AwardType.offense:
+        return 'Offense';
+      case AwardType.sportsmanship:
+        return 'Sportsmanship';
     }
   }
 
@@ -288,7 +296,6 @@ class _AwardCategoryCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -385,14 +392,16 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
 
   String _label(AwardType c) {
     switch (c) {
-      case AwardType.christlike:
-        return 'Christlike';
-      case AwardType.offense:
-        return 'Offense';
+      case AwardType.christlikeness:
+        return 'Christlikeness';
       case AwardType.defense:
         return 'Defense';
-      case AwardType.hustle:
-        return 'Hustle';
+      case AwardType.effort:
+        return 'Effort';
+      case AwardType.offense:
+        return 'Offense';
+      case AwardType.sportsmanship:
+        return 'Sportsmanship';
     }
   }
 
@@ -441,27 +450,33 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
               ),
               const Divider(height: 1),
               Flexible(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  children: widget.presentPlayers.map((p) {
-                    final isSelected = _selected.contains(p.uuid);
-                    return ListTile(
-                      title: Text(p.name),
-                      trailing: isSelected
-                          ? const Icon(Icons.check_circle,
-                              color: AppColors.saveAwardsGold, size: 22)
-                          : null,
-                      onTap: () {
-                        if (isSelected) {
-                          _toggle(p.uuid);
-                        } else if (_selected.length < widget.maxCount) {
-                          _toggle(p.uuid);
-                        }
-                      },
-                    );
-                  }).toList(),
-                ),
+                child: widget.presentPlayers.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'All other players have already been selected for an award. '
+                          'Remove someone from another category to select them here.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : ListView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        children: widget.presentPlayers.map((p) {
+                          final isSelected = _selected.contains(p.uuid);
+                          return ListTile(
+                            title: Text(p.name),
+                            trailing: isSelected
+                                ? const Icon(Icons.check_circle,
+                                    color: AppColors.saveAwardsGold, size: 22)
+                                : null,
+                            onTap: () => _toggle(p.uuid),
+                          );
+                        }).toList(),
+                      ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -489,6 +504,62 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
   }
 }
 
+class _PlayersNotYetSelected extends StatelessWidget {
+  const _PlayersNotYetSelected({
+    required this.presentPlayers,
+    required this.awards,
+  });
+
+  final List<Player> presentPlayers;
+  final Map<AwardType, List<String>> awards;
+
+  @override
+  Widget build(BuildContext context) {
+    final awardedUuids = <String>{};
+    for (final list in awards.values) {
+      awardedUuids.addAll(list);
+    }
+    final notYetSelected =
+        presentPlayers.where((p) => !awardedUuids.contains(p.uuid)).toList();
+    if (notYetSelected.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(left: 4, bottom: 8),
+        child: Text(
+          'All players have been selected for an award.',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Players not yet selected for an award',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            notYetSelected.map((p) => p.name).join(', '),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PlayerAwardsSummary extends StatelessWidget {
   const _PlayerAwardsSummary({
     required this.presentPlayers,
@@ -500,14 +571,31 @@ class _PlayerAwardsSummary extends StatelessWidget {
 
   String _categoryLabel(AwardType t) {
     switch (t) {
-      case AwardType.christlike:
-        return 'Christlike';
-      case AwardType.offense:
-        return 'Offense';
+      case AwardType.christlikeness:
+        return 'Christlikeness';
       case AwardType.defense:
         return 'Defense';
-      case AwardType.hustle:
-        return 'Hustle';
+      case AwardType.effort:
+        return 'Effort';
+      case AwardType.offense:
+        return 'Offense';
+      case AwardType.sportsmanship:
+        return 'Sportsmanship';
+    }
+  }
+
+  Color _colorForAward(AwardType t) {
+    switch (t) {
+      case AwardType.christlikeness:
+        return Colors.grey.shade300;
+      case AwardType.defense:
+        return Colors.red;
+      case AwardType.effort:
+        return Colors.blue;
+      case AwardType.offense:
+        return Colors.grey.shade600;
+      case AwardType.sportsmanship:
+        return AppColors.saveAwardsGold;
     }
   }
 
@@ -533,10 +621,21 @@ class _PlayerAwardsSummary extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              if (list.isNotEmpty) ...[
+                ...list.map((awardType) => Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Icon(
+                        Icons.star,
+                        size: 18,
+                        color: _colorForAward(awardType),
+                      ),
+                    )),
+                const SizedBox(width: 6),
+              ],
               SizedBox(
-                width: 100,
+                width: list.isEmpty ? 100 : null,
                 child: Text(
                   p.name,
                   style: const TextStyle(
@@ -546,6 +645,7 @@ class _PlayerAwardsSummary extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   text,

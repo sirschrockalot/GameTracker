@@ -6,11 +6,13 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/game.dart';
 import '../../data/isar/models/player.dart';
+import '../../data/isar/models/team.dart';
 import '../../data/repositories/game_repository.dart';
 import '../../domain/services/lineup_suggester.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/players_provider.dart';
+import '../../providers/teams_provider.dart';
 import '../../router/app_router.dart';
 import '../../widgets/app_bottom_nav.dart';
 
@@ -24,6 +26,8 @@ class GameDashboardScreen extends ConsumerStatefulWidget {
 
 class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
   int _selectedQuarter = 0;
+  /// In-progress lineup per quarter (1-based) before confirm. Used when < 5 saved.
+  final Map<int, List<String>> _draftLineups = {};
 
   @override
   Widget build(BuildContext context) {
@@ -31,36 +35,68 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     final playersAsync = ref.watch(playersStreamProvider);
     final suggested = ref.watch(suggestedLineupProvider);
     final suggestedQuarter = ref.watch(suggestedQuarterProvider);
-    final swapSelection = ref.watch(swapSelectionProvider);
 
     if (gameUuid == null) {
+      final teamsAsync = ref.watch(teamsStreamProvider);
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF5F5F5),
         body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'No game in progress.',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.go(AppRoute.teamSetup.path),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primaryOrange,
-                    ),
-                    child: const Text('Start from Team Setup'),
-                  ),
-                ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Game Day',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Select a team to start a game',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Expanded(
+                child: teamsAsync.when(
+                  data: (teams) {
+                    if (teams.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'No teams yet. Create a team in the Teams tab first.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: teams.length,
+                      itemBuilder: (context, i) {
+                        final team = teams[i];
+                        return _GameDayTeamCard(team: team);
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Error: $e')),
+                ),
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: const AppBottomNav(currentPath: '/game'),
@@ -69,6 +105,31 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Game Day',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: 20,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              onPressed: () => _showEndGameDialog(context, gameUuid),
+              icon: const Icon(Icons.stop_circle_outlined, size: 20),
+              label: const Text('End Game'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryOrange,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: playersAsync.when(
           data: (allPlayers) {
@@ -88,38 +149,41 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
             final quarterNum = _selectedQuarter + 1;
             final lineups = game.quarterLineups;
             final currentQuarter = game.currentQuarter.clamp(0, AppConstants.quartersPerGame);
-            List<String> onCourt = lineups[quarterNum] ?? [];
-            if (onCourt.length != AppConstants.playersOnCourt &&
-                suggested != null &&
+            final saved = lineups[quarterNum];
+            List<String> onCourt;
+            if (_draftLineups.containsKey(quarterNum)) {
+              onCourt = List<String>.from(_draftLineups[quarterNum]!);
+            } else if (saved != null && saved.length == AppConstants.playersOnCourt) {
+              onCourt = List.from(saved);
+            } else if (suggested != null &&
                 suggestedQuarter == quarterNum &&
                 suggested.length == AppConstants.playersOnCourt) {
               onCourt = List.from(suggested);
-            } else if (onCourt.length != AppConstants.playersOnCourt) {
-              onCourt = [];
+            } else {
+              onCourt = List<String>.from(_draftLineups[quarterNum] ?? []);
             }
             final sitting = presentIds
                 .where((uuid) => !onCourt.contains(uuid))
                 .toList();
-            final nextQuarterForSuggest = (currentQuarter + 1).clamp(1, AppConstants.quartersPerGame);
-            final canSuggest = currentQuarter < AppConstants.quartersPerGame && presentPlayers.length >= AppConstants.playersOnCourt;
+            // First quarter (1..6) that has no full lineup yet
+            int? firstEmptyQuarter;
+            for (int q = 1; q <= AppConstants.quartersPerGame; q++) {
+              final sq = lineups[q];
+              if (sq == null || sq.length != AppConstants.playersOnCourt) {
+                firstEmptyQuarter = q;
+                break;
+              }
+            }
+            final allQuartersSet = firstEmptyQuarter == null;
+            final canSuggest = !allQuartersSet &&
+                presentPlayers.length >= AppConstants.playersOnCourt &&
+                firstEmptyQuarter != null;
+            final suggestTargetQuarter = firstEmptyQuarter ?? quarterNum;
             final showConfirmForThisQuarter = onCourt.length == AppConstants.playersOnCourt &&
                 currentQuarter < quarterNum;
 
             return CustomScrollView(
               slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(
-                      'Game Day',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
                 SliverToBoxAdapter(
                   child: _QuarterTabs(
                     selected: _selectedQuarter,
@@ -179,13 +243,12 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                         } catch (_) {
                           p = Player.create(uuid: uuid, name: '?');
                         }
-                        final selected = swapSelection == uuid;
                         return _GamePlayerChip(
                           name: p.name,
                           skillTag: p.skill,
                           onCourt: true,
-                          selected: selected,
-                          onTap: () => _onChipTap(uuid, onCourt, sitting),
+                          selected: false,
+                          onTap: () => _onChipTap(uuid, onCourt, sitting, gameUuid),
                         );
                       }).toList(),
                     ),
@@ -230,13 +293,12 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                         } catch (_) {
                           p2 = Player.create(uuid: uuid, name: '?');
                         }
-                        final selected = swapSelection == uuid;
                         return _GamePlayerChip(
                           name: p2.name,
                           skillTag: p2.skill,
                           onCourt: false,
-                          selected: selected,
-                          onTap: () => _onChipTap(uuid, onCourt, sitting),
+                          selected: false,
+                          onTap: () => _onChipTap(uuid, onCourt, sitting, gameUuid),
                         );
                       }).toList(),
                     ),
@@ -254,12 +316,13 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                             icon: const Icon(Icons.lightbulb_outline, size: 22),
                             label: Text(
                               canSuggest
-                                  ? 'Suggest Q$nextQuarterForSuggest Lineup'
+                                  ? 'Suggest Q$suggestTargetQuarter Lineup'
                                   : 'All quarters set',
                             ),
                             onPressed: canSuggest
                                 ? () => _suggestNextQuarter(
-                                        gameUuid, allPlayers, game!)
+                                        gameUuid, presentPlayers, game!,
+                                        forQuarter: suggestTargetQuarter)
                                 : null,
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.primaryOrange,
@@ -320,58 +383,53 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
   }
 
   void _onChipTap(
-      String playerUuid, List<String> onCourtIds, List<String> sittingIds) {
-    if (onCourtIds.length != AppConstants.playersOnCourt) {
-      ref.read(swapSelectionProvider.notifier).state = null;
+      String playerUuid,
+      List<String> onCourtIds,
+      List<String> sittingIds,
+      String gameUuid) {
+    final quarterNum = _selectedQuarter + 1;
+
+    if (onCourtIds.contains(playerUuid)) {
+      _removeFromCourt(quarterNum, playerUuid, onCourtIds);
       return;
     }
-    final current = ref.read(swapSelectionProvider);
-    if (current == null) {
-      ref.read(swapSelectionProvider.notifier).state = playerUuid;
-      return;
+
+    if (onCourtIds.length < AppConstants.playersOnCourt) {
+      _addToCourt(quarterNum, playerUuid, onCourtIds);
     }
-    final currentOnCourt = onCourtIds.contains(current);
-    final tappedOnCourt = onCourtIds.contains(playerUuid);
-    if (currentOnCourt && !tappedOnCourt) {
-      _doSwap(current, playerUuid);
-    } else if (!currentOnCourt && tappedOnCourt) {
-      _doSwap(playerUuid, current);
-    }
-    ref.read(swapSelectionProvider.notifier).state = null;
   }
 
-  Future<void> _doSwap(String fromOnCourt, String fromSitting) async {
-    final gameUuid = ref.read(currentGameUuidProvider);
-    if (gameUuid == null) return;
-    final isar = await ref.read(isarProvider.future);
-    final gameRepo = GameRepository(isar);
-    final game = await gameRepo.getByUuid(gameUuid);
-    if (game == null) return;
-    final quarterNum = _selectedQuarter + 1;
-    final lineups = Map<int, List<String>>.from(game.quarterLineups);
-    final current = lineups[quarterNum] ?? [];
-    final i = current.indexOf(fromOnCourt);
-    if (i < 0) return;
-    final next = List<String>.from(current);
-    next[i] = fromSitting;
-    lineups[quarterNum] = next;
-    game.quarterLineups = lineups;
-    await isar.writeTxn(() => isar.games.put(game));
+  void _addToCourt(int quarterNum, String playerUuid, List<String> currentOnCourt) {
+    if (currentOnCourt.length >= AppConstants.playersOnCourt) return;
     if (ref.read(suggestedQuarterProvider) == quarterNum) {
       ref.read(suggestedLineupProvider.notifier).state = null;
       ref.read(suggestedQuarterProvider.notifier).state = null;
     }
+    setState(() {
+      _draftLineups[quarterNum] = List<String>.from(currentOnCourt)..add(playerUuid);
+    });
+  }
+
+  void _removeFromCourt(int quarterNum, String playerUuid, List<String> currentOnCourt) {
+    if (ref.read(suggestedQuarterProvider) == quarterNum) {
+      ref.read(suggestedLineupProvider.notifier).state = null;
+      ref.read(suggestedQuarterProvider.notifier).state = null;
+    }
+    setState(() {
+      final next = List<String>.from(currentOnCourt)..remove(playerUuid);
+      _draftLineups[quarterNum] = next;
+    });
   }
 
   void _suggestNextQuarter(
-      String gameUuid, List<Player> presentPlayers, Game game) {
-    final currentQuarter =
-        game.currentQuarter.clamp(1, AppConstants.quartersPerGame);
-    final nextQuarter =
-        (currentQuarter + 1).clamp(1, AppConstants.quartersPerGame);
-    if (nextQuarter <= currentQuarter) return;
+    String gameUuid,
+    List<Player> presentPlayers,
+    Game game, {
+    required int forQuarter,
+  }) {
+    if (forQuarter < 1 || forQuarter > AppConstants.quartersPerGame) return;
     final lineups = game.quarterLineups;
-    final lastLineup = lineups[currentQuarter] ?? [];
+    final lastLineup = lineups[forQuarter - 1] ?? [];
     final presentIds = game.presentPlayerIds.toSet();
     final lastSitting =
         presentIds.where((id) => !lastLineup.contains(id)).toList();
@@ -380,12 +438,12 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
       quartersPlayed: Map.from(game.quartersPlayed),
       lastQuarterLineup: lastLineup,
       lastQuarterSitting: lastSitting,
-      nextQuarter: nextQuarter,
+      nextQuarter: forQuarter,
       requiredOnCourt: AppConstants.playersOnCourt,
     );
     ref.read(suggestedLineupProvider.notifier).state = suggestion.onCourt;
-    ref.read(suggestedQuarterProvider.notifier).state = nextQuarter;
-    setState(() => _selectedQuarter = nextQuarter - 1);
+    ref.read(suggestedQuarterProvider.notifier).state = forQuarter;
+    setState(() => _selectedQuarter = forQuarter - 1);
   }
 
   Future<void> _applySuggestion(String gameUuid) async {
@@ -409,7 +467,53 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     await gameRepo.updateCurrentQuarter(gameUuid, q);
     ref.read(suggestedLineupProvider.notifier).state = null;
     ref.read(suggestedQuarterProvider.notifier).state = null;
-    setState(() => _selectedQuarter = q - 1);
+    // Switch to next quarter that has no lineup so user can suggest again
+    final updated = await gameRepo.getByUuid(gameUuid);
+    final lineupsAfter = updated?.quarterLineups ?? {};
+    int nextTab = q - 1;
+    for (int qn = q + 1; qn <= AppConstants.quartersPerGame; qn++) {
+      final sq = lineupsAfter[qn];
+      if (sq == null || sq.length != AppConstants.playersOnCourt) {
+        nextTab = qn - 1;
+        break;
+      }
+    }
+    setState(() {
+      _draftLineups.remove(q);
+      _selectedQuarter = nextTab;
+    });
+  }
+
+  Future<void> _showEndGameDialog(BuildContext context, String gameUuid) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('End game?'),
+        content: const Text(
+          'All lineups and playing time are saved. You can view the full summary with who played which quarters.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primaryOrange),
+            child: const Text('End game'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    ref.read(currentGameUuidProvider.notifier).state = null;
+    ref.read(suggestedLineupProvider.notifier).state = null;
+    ref.read(suggestedQuarterProvider.notifier).state = null;
+    ref.read(swapSelectionProvider.notifier).state = null;
+    if (context.mounted) {
+      context.go('/history');
+      context.push('/history/$gameUuid');
+    }
   }
 
   Future<void> _confirmLineup(
@@ -419,12 +523,18 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     final gameRepo = GameRepository(isar);
     final game = await gameRepo.getByUuid(gameUuid);
     if (game == null) return;
+    await gameRepo.updateLineupForQuarter(gameUuid, quarterNum, onCourt);
     final played = Map<String, int>.from(game.quartersPlayed);
     for (final uuid in onCourt) {
       played[uuid] = (played[uuid] ?? 0) + 1;
     }
     await gameRepo.updateQuartersPlayed(gameUuid, played);
     await gameRepo.updateCurrentQuarter(gameUuid, quarterNum);
+    setState(() => _draftLineups.remove(quarterNum));
+    if (ref.read(suggestedQuarterProvider) == quarterNum) {
+      ref.read(suggestedLineupProvider.notifier).state = null;
+      ref.read(suggestedQuarterProvider.notifier).state = null;
+    }
   }
 }
 
@@ -609,6 +719,58 @@ class _GamePlayerChip extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GameDayTeamCard extends StatelessWidget {
+  const _GameDayTeamCard({required this.team});
+
+  final Team team;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.chipInactive),
+      ),
+      color: Colors.white,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.primaryOrange.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.groups,
+            color: AppColors.primaryOrange,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          team.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          '${team.playerIds.length} players',
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+        onTap: () => context.push('/game/whos-here/${team.uuid}'),
       ),
     );
   }
