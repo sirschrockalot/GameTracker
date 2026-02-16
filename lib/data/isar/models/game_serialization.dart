@@ -26,7 +26,20 @@ class GameSerialization {
     return jsonEncode(encoded);
   }
 
-  // --- Quarters played: Map<String, int> (player UUID -> count)
+  /// Derive quarters played from quarter lineups (use for sync; do not store in cloud).
+  static Map<String, int> computeQuartersPlayedFromLineups(
+    Map<int, List<String>> quarterLineups,
+  ) {
+    final result = <String, int>{};
+    for (final list in quarterLineups.values) {
+      for (final uuid in list) {
+        result[uuid] = (result[uuid] ?? 0) + 1;
+      }
+    }
+    return result;
+  }
+
+  // --- Quarters played: Map<String, int> (player UUID -> count). Local cache only.
   static Map<String, int> decodeQuartersPlayed(String json) {
     if (json.isEmpty || json == '{}') return {};
     final map = jsonDecode(json) as Map<String, dynamic>;

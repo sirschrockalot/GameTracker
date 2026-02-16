@@ -3,7 +3,9 @@ import 'package:isar/isar.dart';
 
 import '../data/isar/models/game.dart';
 import '../data/repositories/game_repository.dart';
+import '../domain/services/season_totals.dart';
 import 'isar_provider.dart';
+import 'players_provider.dart';
 
 final gamesStreamProvider = StreamProvider<List<Game>>((ref) {
   final isar = ref.watch(isarProvider).valueOrNull;
@@ -52,6 +54,23 @@ final suggestedQuarterProvider = StateProvider<int?>((ref) => null);
 
 /// For quick swap: first selected player UUID. Null if none selected.
 final swapSelectionProvider = StateProvider<String?>((ref) => null);
+
+/// Season totals: per-player aggregates across all games (offline, computed).
+final seasonTotalsProvider = Provider<AsyncValue<List<PlayerSeasonTotals>>>((ref) {
+  final gamesAsync = ref.watch(gamesStreamProvider);
+  final playersAsync = ref.watch(playersFutureProvider);
+  return gamesAsync.when(
+    data: (games) => playersAsync.when(
+      data: (players) => AsyncValue.data(
+        computeSeasonTotals(games, players),
+      ),
+      loading: () => const AsyncValue.loading(),
+      error: (e, st) => AsyncValue.error(e, st),
+    ),
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) => AsyncValue.error(e, st),
+  );
+});
 
 /// Compute quarters played per player for the current game (from Game.quartersPlayed).
 Future<Map<String, int>> getQuartersPlayedForGame(

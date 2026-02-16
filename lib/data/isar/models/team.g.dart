@@ -17,23 +17,58 @@ const TeamSchema = CollectionSchema(
   name: r'Team',
   id: -3518492973250071660,
   properties: {
-    r'createdAt': PropertySchema(
+    r'coachCode': PropertySchema(
       id: 0,
+      name: r'coachCode',
+      type: IsarType.string,
+    ),
+    r'coachCodeRotatedAt': PropertySchema(
+      id: 1,
+      name: r'coachCodeRotatedAt',
+      type: IsarType.dateTime,
+    ),
+    r'createdAt': PropertySchema(
+      id: 2,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
+    r'inviteCode': PropertySchema(
+      id: 3,
+      name: r'inviteCode',
+      type: IsarType.string,
+    ),
+    r'inviteCodeRotatedAt': PropertySchema(
+      id: 4,
+      name: r'inviteCodeRotatedAt',
+      type: IsarType.dateTime,
+    ),
     r'name': PropertySchema(
-      id: 1,
+      id: 5,
       name: r'name',
       type: IsarType.string,
     ),
+    r'ownerUserId': PropertySchema(
+      id: 6,
+      name: r'ownerUserId',
+      type: IsarType.string,
+    ),
+    r'parentCode': PropertySchema(
+      id: 7,
+      name: r'parentCode',
+      type: IsarType.string,
+    ),
+    r'parentCodeRotatedAt': PropertySchema(
+      id: 8,
+      name: r'parentCodeRotatedAt',
+      type: IsarType.dateTime,
+    ),
     r'playerIds': PropertySchema(
-      id: 2,
+      id: 9,
       name: r'playerIds',
       type: IsarType.stringList,
     ),
     r'uuid': PropertySchema(
-      id: 3,
+      id: 10,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -72,7 +107,16 @@ int _teamEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.coachCode.length * 3;
+  bytesCount += 3 + object.inviteCode.length * 3;
   bytesCount += 3 + object.name.length * 3;
+  {
+    final value = object.ownerUserId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.parentCode.length * 3;
   bytesCount += 3 + object.playerIds.length * 3;
   {
     for (var i = 0; i < object.playerIds.length; i++) {
@@ -90,10 +134,17 @@ void _teamSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeString(offsets[1], object.name);
-  writer.writeStringList(offsets[2], object.playerIds);
-  writer.writeString(offsets[3], object.uuid);
+  writer.writeString(offsets[0], object.coachCode);
+  writer.writeDateTime(offsets[1], object.coachCodeRotatedAt);
+  writer.writeDateTime(offsets[2], object.createdAt);
+  writer.writeString(offsets[3], object.inviteCode);
+  writer.writeDateTime(offsets[4], object.inviteCodeRotatedAt);
+  writer.writeString(offsets[5], object.name);
+  writer.writeString(offsets[6], object.ownerUserId);
+  writer.writeString(offsets[7], object.parentCode);
+  writer.writeDateTime(offsets[8], object.parentCodeRotatedAt);
+  writer.writeStringList(offsets[9], object.playerIds);
+  writer.writeString(offsets[10], object.uuid);
 }
 
 Team _teamDeserialize(
@@ -103,11 +154,18 @@ Team _teamDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Team();
-  object.createdAt = reader.readDateTime(offsets[0]);
+  object.coachCode = reader.readString(offsets[0]);
+  object.coachCodeRotatedAt = reader.readDateTimeOrNull(offsets[1]);
+  object.createdAt = reader.readDateTime(offsets[2]);
   object.id = id;
-  object.name = reader.readString(offsets[1]);
-  object.playerIds = reader.readStringList(offsets[2]) ?? [];
-  object.uuid = reader.readString(offsets[3]);
+  object.inviteCode = reader.readString(offsets[3]);
+  object.inviteCodeRotatedAt = reader.readDateTimeOrNull(offsets[4]);
+  object.name = reader.readString(offsets[5]);
+  object.ownerUserId = reader.readStringOrNull(offsets[6]);
+  object.parentCode = reader.readString(offsets[7]);
+  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[8]);
+  object.playerIds = reader.readStringList(offsets[9]) ?? [];
+  object.uuid = reader.readString(offsets[10]);
   return object;
 }
 
@@ -119,12 +177,26 @@ P _teamDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
-    case 1:
       return (reader.readString(offset)) as P;
+    case 1:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readDateTime(offset)) as P;
     case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readStringOrNull(offset)) as P;
+    case 7:
+      return (reader.readString(offset)) as P;
+    case 8:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 9:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 10:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -316,6 +388,206 @@ extension TeamQueryWhere on QueryBuilder<Team, Team, QWhereClause> {
 }
 
 extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'coachCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'coachCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'coachCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'coachCode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'coachCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'coachCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'coachCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'coachCode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'coachCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'coachCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeRotatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'coachCodeRotatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition>
+      coachCodeRotatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'coachCodeRotatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeRotatedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'coachCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeRotatedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'coachCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeRotatedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'coachCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> coachCodeRotatedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'coachCodeRotatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterFilterCondition> createdAtEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -413,6 +685,207 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'inviteCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'inviteCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'inviteCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'inviteCode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'inviteCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'inviteCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'inviteCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'inviteCode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'inviteCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'inviteCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeRotatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'inviteCodeRotatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition>
+      inviteCodeRotatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'inviteCodeRotatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeRotatedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'inviteCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition>
+      inviteCodeRotatedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'inviteCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeRotatedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'inviteCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeRotatedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'inviteCodeRotatedAt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -545,6 +1018,353 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'name',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'ownerUserId',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'ownerUserId',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'ownerUserId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'ownerUserId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'ownerUserId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'ownerUserId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> ownerUserIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'ownerUserId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'parentCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'parentCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'parentCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'parentCode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'parentCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'parentCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'parentCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'parentCode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'parentCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'parentCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeRotatedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'parentCodeRotatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition>
+      parentCodeRotatedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'parentCodeRotatedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeRotatedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'parentCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition>
+      parentCodeRotatedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'parentCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeRotatedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'parentCodeRotatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> parentCodeRotatedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'parentCodeRotatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -897,6 +1717,30 @@ extension TeamQueryObject on QueryBuilder<Team, Team, QFilterCondition> {}
 extension TeamQueryLinks on QueryBuilder<Team, Team, QFilterCondition> {}
 
 extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
+  QueryBuilder<Team, Team, QAfterSortBy> sortByCoachCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByCoachCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByCoachCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCodeRotatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByCoachCodeRotatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCodeRotatedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -909,6 +1753,30 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortByInviteCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByInviteCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByInviteCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCodeRotatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByInviteCodeRotatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCodeRotatedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -918,6 +1786,42 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
   QueryBuilder<Team, Team, QAfterSortBy> sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByParentCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByParentCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByParentCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCodeRotatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByParentCodeRotatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCodeRotatedAt', Sort.desc);
     });
   }
 
@@ -935,6 +1839,30 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
 }
 
 extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
+  QueryBuilder<Team, Team, QAfterSortBy> thenByCoachCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByCoachCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByCoachCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCodeRotatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByCoachCodeRotatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'coachCodeRotatedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -959,6 +1887,30 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> thenByInviteCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByInviteCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByInviteCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCodeRotatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByInviteCodeRotatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'inviteCodeRotatedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -968,6 +1920,42 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
   QueryBuilder<Team, Team, QAfterSortBy> thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByOwnerUserId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByOwnerUserIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'ownerUserId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByParentCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByParentCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByParentCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCodeRotatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByParentCodeRotatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentCodeRotatedAt', Sort.desc);
     });
   }
 
@@ -985,9 +1973,35 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
 }
 
 extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
+  QueryBuilder<Team, Team, QDistinct> distinctByCoachCode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'coachCode', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByCoachCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'coachCodeRotatedAt');
+    });
+  }
+
   QueryBuilder<Team, Team, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByInviteCode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'inviteCode', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByInviteCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'inviteCodeRotatedAt');
     });
   }
 
@@ -995,6 +2009,26 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByOwnerUserId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'ownerUserId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByParentCode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'parentCode', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByParentCodeRotatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'parentCodeRotatedAt');
     });
   }
 
@@ -1019,15 +2053,59 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
     });
   }
 
+  QueryBuilder<Team, String, QQueryOperations> coachCodeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'coachCode');
+    });
+  }
+
+  QueryBuilder<Team, DateTime?, QQueryOperations> coachCodeRotatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'coachCodeRotatedAt');
+    });
+  }
+
   QueryBuilder<Team, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
     });
   }
 
+  QueryBuilder<Team, String, QQueryOperations> inviteCodeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'inviteCode');
+    });
+  }
+
+  QueryBuilder<Team, DateTime?, QQueryOperations>
+      inviteCodeRotatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'inviteCodeRotatedAt');
+    });
+  }
+
   QueryBuilder<Team, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<Team, String?, QQueryOperations> ownerUserIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'ownerUserId');
+    });
+  }
+
+  QueryBuilder<Team, String, QQueryOperations> parentCodeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'parentCode');
+    });
+  }
+
+  QueryBuilder<Team, DateTime?, QQueryOperations>
+      parentCodeRotatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'parentCodeRotatedAt');
     });
   }
 

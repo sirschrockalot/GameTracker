@@ -206,14 +206,28 @@ class _WhosHereScreenState extends ConsumerState<WhosHereScreen> {
     Team team,
     List<String> presentPlayerIds,
   ) async {
+    if (presentPlayerIds.length < AppConstants.playersOnCourt) return;
     final isar = await ref.read(isarProvider.future);
+    final repo = GameRepository(isar);
     final game = Game.create(
       uuid: const Uuid().v4(),
       startedAt: DateTime.now(),
       currentQuarter: 0,
       presentPlayerIds: presentPlayerIds,
+      teamId: team.uuid,
     );
-    await GameRepository(isar).createGame(game);
+    await repo.createGame(game);
+    if (presentPlayerIds.length == AppConstants.playersOnCourt) {
+      for (int q = 1; q <= AppConstants.quartersPerGame; q++) {
+        await repo.updateLineupForQuarter(game.uuid, q, presentPlayerIds);
+      }
+      final played = <String, int>{};
+      for (final uuid in presentPlayerIds) {
+        played[uuid] = AppConstants.quartersPerGame;
+      }
+      await repo.updateQuartersPlayed(game.uuid, played);
+      await repo.updateCurrentQuarter(game.uuid, AppConstants.quartersPerGame);
+    }
     ref.read(currentGameUuidProvider.notifier).state = game.uuid;
     ref.read(suggestedLineupProvider.notifier).state = null;
     ref.read(suggestedQuarterProvider.notifier).state = null;

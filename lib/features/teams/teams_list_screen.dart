@@ -53,9 +53,14 @@ class TeamsListScreen extends ConsumerWidget {
                 data: (teams) {
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: teams.length + 1,
+                    itemCount: teams.length + 2,
                     itemBuilder: (context, i) {
                       if (i == teams.length) {
+                        return _JoinTeamCard(
+                          onTap: () => context.push('/teams/join'),
+                        );
+                      }
+                      if (i == teams.length + 1) {
                         return _AddTeamCard(
                           onTap: () => context.push('/teams/new'),
                         );
@@ -173,6 +178,46 @@ class _TeamCard extends StatelessWidget {
           ],
         ),
         onTap: () => context.push('/teams/${team.uuid}'),
+      ),
+    );
+  }
+}
+
+class _JoinTeamCard extends StatelessWidget {
+  const _JoinTeamCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.chipInactive, width: 2, strokeAlign: BorderSide.strokeAlignInside),
+      ),
+      color: Colors.white.withValues(alpha: 0.5),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.group_add, size: 32, color: AppColors.textSecondary),
+              const SizedBox(width: 12),
+              Text(
+                'Join team',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

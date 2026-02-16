@@ -6,6 +6,7 @@ import '../data/isar/isar_schemas.dart';
 import '../data/isar/models/player.dart';
 import '../data/isar/models/game.dart';
 import '../data/isar/models/team.dart';
+import '../data/isar/models/join_request.dart';
 
 final isarProvider = FutureProvider<Isar>((ref) async {
   final dir = await getApplicationDocumentsDirectory();
@@ -18,11 +19,12 @@ final isarProvider = FutureProvider<Isar>((ref) async {
   return isar;
 });
 
-/// Clears all data from the database (players, games, teams).
+/// Clears all data from the database (players, games, teams, join requests).
 Future<void> clearIsarDatabase(Isar isar) async {
   await isar.writeTxn(() async {
     await isar.players.clear();
     await isar.games.clear();
     await isar.teams.clear();
+    await isar.joinRequests.clear();
   });
 }

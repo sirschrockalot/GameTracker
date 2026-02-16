@@ -8,6 +8,7 @@ import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
 import '../../data/repositories/player_repository.dart';
 import '../../data/repositories/team_repository.dart';
+import '../../providers/current_user_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/players_provider.dart';
 import '../../providers/teams_provider.dart';
@@ -82,10 +83,12 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       return;
     }
     final isar = await ref.read(isarProvider.future);
+    final ownerUserId = ref.read(currentUserIdProvider);
     final team = Team.create(
       uuid: const Uuid().v4(),
       name: name,
       playerIds: List<String>.from(_selectedPlayerIds),
+      ownerUserId: ownerUserId,
     );
     await TeamRepository(isar).add(team);
     if (!mounted) return;

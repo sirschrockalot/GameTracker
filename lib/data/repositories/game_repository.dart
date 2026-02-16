@@ -79,4 +79,26 @@ class GameRepository {
       await _isar.games.put(game);
     });
   }
+
+  /// Batch update multiple quarter lineups, quartersPlayed, and currentQuarter in one transaction.
+  Future<void> batchUpdateLineupsQuartersAndCurrent(
+    String gameUuid,
+    Map<int, List<String>> quarterLineups,
+    Map<String, int> quartersPlayed,
+    int currentQuarter,
+  ) async {
+    await _isar.writeTxn(() async {
+      final game = await _isar.games.filter().uuidEqualTo(gameUuid).findFirst();
+      if (game == null) return;
+      final lineups = game.quarterLineups;
+      for (final e in quarterLineups.entries) {
+        lineups[e.key] = List.from(e.value);
+      }
+      game.quarterLineups = lineups;
+      game.quartersPlayed = Map.from(quartersPlayed);
+      game.currentQuarter = currentQuarter;
+      await _isar.games.put(game);
+    });
+  }
+
 }

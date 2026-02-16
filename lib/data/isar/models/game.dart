@@ -29,11 +29,19 @@ class Game {
   /// UUIDs of players present for this game.
   late List<String> presentPlayerIds;
 
+  /// Team UUID this game belongs to (for multi-coach sync).
+  String? teamId;
+
+  late DateTime updatedAt;
+  String? updatedBy;
+  DateTime? deletedAt;
+  late int schemaVersion;
+
   /// JSON: quarter (1..6) -> list of 5 player UUIDs. Stored as string.
   @Name('quarterLineupsJson')
   late String quarterLineupsJson;
 
-  /// JSON: playerId -> quarters played count. Stored as string.
+  /// JSON: playerId -> quarters played count. Local cache only; sync derives from quarterLineups.
   @Name('quartersPlayedJson')
   late String quartersPlayedJson;
 
@@ -49,10 +57,17 @@ class Game {
     this.quartersTotal = 6,
     this.currentQuarter = 1,
     required this.presentPlayerIds,
+    this.teamId,
+    DateTime? updatedAt,
+    this.updatedBy,
+    this.deletedAt,
+    int schemaVersion = 1,
     String? quarterLineupsJson,
     String? quartersPlayedJson,
     String? awardsJson,
-  })  : quarterLineupsJson = quarterLineupsJson ?? GameSerialization.emptyQuarterLineupsJson,
+  })  : updatedAt = updatedAt ?? startedAt,
+        schemaVersion = schemaVersion,
+        quarterLineupsJson = quarterLineupsJson ?? GameSerialization.emptyQuarterLineupsJson,
         quartersPlayedJson = quartersPlayedJson ?? GameSerialization.emptyQuartersPlayedJson,
         awardsJson = awardsJson ?? GameSerialization.emptyAwardsJson;
 
@@ -66,7 +81,7 @@ class Game {
     quarterLineupsJson = GameSerialization.encodeQuarterLineups(value);
   }
 
-  /// Player UUID -> quarters played count.
+  /// Player UUID -> quarters played count (local cache; kept in sync with lineups on save).
   @ignore
   Map<String, int> get quartersPlayed =>
       GameSerialization.decodeQuartersPlayed(quartersPlayedJson);
@@ -75,6 +90,11 @@ class Game {
   set quartersPlayed(Map<String, int> value) {
     quartersPlayedJson = GameSerialization.encodeQuartersPlayed(value);
   }
+
+  /// Derived from [quarterLineups]; use for sync payloads instead of storing quartersPlayed.
+  @ignore
+  Map<String, int> get quartersPlayedDerived =>
+      GameSerialization.computeQuartersPlayedFromLineups(quarterLineups);
 
   /// Award type -> list of up to 2 player UUIDs.
   @ignore

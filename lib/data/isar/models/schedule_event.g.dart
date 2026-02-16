@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'game.dart';
+part of 'schedule_event.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator
@@ -9,72 +9,73 @@ part of 'game.dart';
 // coverage:ignore-file
 // ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
-extension GetGameCollection on Isar {
-  IsarCollection<Game> get games => this.collection();
+extension GetScheduleEventCollection on Isar {
+  IsarCollection<ScheduleEvent> get scheduleEvents => this.collection();
 }
 
-const GameSchema = CollectionSchema(
-  name: r'Game',
-  id: -6261407721091271860,
+const ScheduleEventSchema = CollectionSchema(
+  name: r'ScheduleEvent',
+  id: -4227520409962218217,
   properties: {
-    r'awardsJson': PropertySchema(
+    r'createdAt': PropertySchema(
       id: 0,
-      name: r'awardsJson',
-      type: IsarType.string,
-    ),
-    r'currentQuarter': PropertySchema(
-      id: 1,
-      name: r'currentQuarter',
-      type: IsarType.long,
+      name: r'createdAt',
+      type: IsarType.dateTime,
     ),
     r'deletedAt': PropertySchema(
-      id: 2,
+      id: 1,
       name: r'deletedAt',
       type: IsarType.dateTime,
     ),
-    r'presentPlayerIds': PropertySchema(
+    r'endsAt': PropertySchema(
+      id: 2,
+      name: r'endsAt',
+      type: IsarType.dateTime,
+    ),
+    r'location': PropertySchema(
       id: 3,
-      name: r'presentPlayerIds',
-      type: IsarType.stringList,
+      name: r'location',
+      type: IsarType.string,
     ),
-    r'quarterLineupsJson': PropertySchema(
+    r'notes': PropertySchema(
       id: 4,
-      name: r'quarterLineupsJson',
+      name: r'notes',
       type: IsarType.string,
     ),
-    r'quartersPlayedJson': PropertySchema(
+    r'opponent': PropertySchema(
       id: 5,
-      name: r'quartersPlayedJson',
+      name: r'opponent',
       type: IsarType.string,
-    ),
-    r'quartersTotal': PropertySchema(
-      id: 6,
-      name: r'quartersTotal',
-      type: IsarType.long,
     ),
     r'schemaVersion': PropertySchema(
-      id: 7,
+      id: 6,
       name: r'schemaVersion',
       type: IsarType.long,
     ),
-    r'startedAt': PropertySchema(
-      id: 8,
-      name: r'startedAt',
+    r'startsAt': PropertySchema(
+      id: 7,
+      name: r'startsAt',
       type: IsarType.dateTime,
     ),
     r'teamId': PropertySchema(
-      id: 9,
+      id: 8,
       name: r'teamId',
       type: IsarType.string,
+    ),
+    r'type': PropertySchema(
+      id: 9,
+      name: r'type',
+      type: IsarType.byte,
+      enumMap: _ScheduleEventtypeEnumValueMap,
     ),
     r'updatedAt': PropertySchema(
       id: 10,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
-    r'updatedBy': PropertySchema(
+    r'updatedByUserId': PropertySchema(
       id: 11,
-      name: r'updatedBy',
+      name: r'updatedByUserId',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
@@ -83,10 +84,10 @@ const GameSchema = CollectionSchema(
       type: IsarType.string,
     )
   },
-  estimateSize: _gameEstimateSize,
-  serialize: _gameSerialize,
-  deserialize: _gameDeserialize,
-  deserializeProp: _gameDeserializeProp,
+  estimateSize: _scheduleEventEstimateSize,
+  serialize: _scheduleEventSerialize,
+  deserialize: _scheduleEventDeserialize,
+  deserializeProp: _scheduleEventDeserializeProp,
   idName: r'id',
   indexes: {
     r'uuid': IndexSchema(
@@ -105,36 +106,39 @@ const GameSchema = CollectionSchema(
   },
   links: {},
   embeddedSchemas: {},
-  getId: _gameGetId,
-  getLinks: _gameGetLinks,
-  attach: _gameAttach,
+  getId: _scheduleEventGetId,
+  getLinks: _scheduleEventGetLinks,
+  attach: _scheduleEventAttach,
   version: '3.1.0+1',
 );
 
-int _gameEstimateSize(
-  Game object,
+int _scheduleEventEstimateSize(
+  ScheduleEvent object,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
-  bytesCount += 3 + object.awardsJson.length * 3;
-  bytesCount += 3 + object.presentPlayerIds.length * 3;
   {
-    for (var i = 0; i < object.presentPlayerIds.length; i++) {
-      final value = object.presentPlayerIds[i];
-      bytesCount += value.length * 3;
-    }
-  }
-  bytesCount += 3 + object.quarterLineupsJson.length * 3;
-  bytesCount += 3 + object.quartersPlayedJson.length * 3;
-  {
-    final value = object.teamId;
+    final value = object.location;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
   }
   {
-    final value = object.updatedBy;
+    final value = object.notes;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.opponent;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.teamId.length * 3;
+  {
+    final value = object.updatedByUserId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -143,52 +147,54 @@ int _gameEstimateSize(
   return bytesCount;
 }
 
-void _gameSerialize(
-  Game object,
+void _scheduleEventSerialize(
+  ScheduleEvent object,
   IsarWriter writer,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.awardsJson);
-  writer.writeLong(offsets[1], object.currentQuarter);
-  writer.writeDateTime(offsets[2], object.deletedAt);
-  writer.writeStringList(offsets[3], object.presentPlayerIds);
-  writer.writeString(offsets[4], object.quarterLineupsJson);
-  writer.writeString(offsets[5], object.quartersPlayedJson);
-  writer.writeLong(offsets[6], object.quartersTotal);
-  writer.writeLong(offsets[7], object.schemaVersion);
-  writer.writeDateTime(offsets[8], object.startedAt);
-  writer.writeString(offsets[9], object.teamId);
+  writer.writeDateTime(offsets[0], object.createdAt);
+  writer.writeDateTime(offsets[1], object.deletedAt);
+  writer.writeDateTime(offsets[2], object.endsAt);
+  writer.writeString(offsets[3], object.location);
+  writer.writeString(offsets[4], object.notes);
+  writer.writeString(offsets[5], object.opponent);
+  writer.writeLong(offsets[6], object.schemaVersion);
+  writer.writeDateTime(offsets[7], object.startsAt);
+  writer.writeString(offsets[8], object.teamId);
+  writer.writeByte(offsets[9], object.type.index);
   writer.writeDateTime(offsets[10], object.updatedAt);
-  writer.writeString(offsets[11], object.updatedBy);
+  writer.writeString(offsets[11], object.updatedByUserId);
   writer.writeString(offsets[12], object.uuid);
 }
 
-Game _gameDeserialize(
+ScheduleEvent _scheduleEventDeserialize(
   Id id,
   IsarReader reader,
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  final object = Game();
-  object.awardsJson = reader.readString(offsets[0]);
-  object.currentQuarter = reader.readLong(offsets[1]);
-  object.deletedAt = reader.readDateTimeOrNull(offsets[2]);
+  final object = ScheduleEvent();
+  object.createdAt = reader.readDateTime(offsets[0]);
+  object.deletedAt = reader.readDateTimeOrNull(offsets[1]);
+  object.endsAt = reader.readDateTimeOrNull(offsets[2]);
   object.id = id;
-  object.presentPlayerIds = reader.readStringList(offsets[3]) ?? [];
-  object.quarterLineupsJson = reader.readString(offsets[4]);
-  object.quartersPlayedJson = reader.readString(offsets[5]);
-  object.quartersTotal = reader.readLong(offsets[6]);
-  object.schemaVersion = reader.readLong(offsets[7]);
-  object.startedAt = reader.readDateTime(offsets[8]);
-  object.teamId = reader.readStringOrNull(offsets[9]);
+  object.location = reader.readStringOrNull(offsets[3]);
+  object.notes = reader.readStringOrNull(offsets[4]);
+  object.opponent = reader.readStringOrNull(offsets[5]);
+  object.schemaVersion = reader.readLong(offsets[6]);
+  object.startsAt = reader.readDateTime(offsets[7]);
+  object.teamId = reader.readString(offsets[8]);
+  object.type =
+      _ScheduleEventtypeValueEnumMap[reader.readByteOrNull(offsets[9])] ??
+          ScheduleEventType.practice;
   object.updatedAt = reader.readDateTime(offsets[10]);
-  object.updatedBy = reader.readStringOrNull(offsets[11]);
+  object.updatedByUserId = reader.readStringOrNull(offsets[11]);
   object.uuid = reader.readString(offsets[12]);
   return object;
 }
 
-P _gameDeserializeProp<P>(
+P _scheduleEventDeserializeProp<P>(
   IsarReader reader,
   int propertyId,
   int offset,
@@ -196,25 +202,26 @@ P _gameDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 2:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 3:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 6:
       return (reader.readLong(offset)) as P;
     case 7:
-      return (reader.readLong(offset)) as P;
-    case 8:
       return (reader.readDateTime(offset)) as P;
+    case 8:
+      return (reader.readString(offset)) as P;
     case 9:
-      return (reader.readStringOrNull(offset)) as P;
+      return (_ScheduleEventtypeValueEnumMap[reader.readByteOrNull(offset)] ??
+          ScheduleEventType.practice) as P;
     case 10:
       return (reader.readDateTime(offset)) as P;
     case 11:
@@ -226,24 +233,34 @@ P _gameDeserializeProp<P>(
   }
 }
 
-Id _gameGetId(Game object) {
+const _ScheduleEventtypeEnumValueMap = {
+  'practice': 0,
+  'game': 1,
+};
+const _ScheduleEventtypeValueEnumMap = {
+  0: ScheduleEventType.practice,
+  1: ScheduleEventType.game,
+};
+
+Id _scheduleEventGetId(ScheduleEvent object) {
   return object.id;
 }
 
-List<IsarLinkBase<dynamic>> _gameGetLinks(Game object) {
+List<IsarLinkBase<dynamic>> _scheduleEventGetLinks(ScheduleEvent object) {
   return [];
 }
 
-void _gameAttach(IsarCollection<dynamic> col, Id id, Game object) {
+void _scheduleEventAttach(
+    IsarCollection<dynamic> col, Id id, ScheduleEvent object) {
   object.id = id;
 }
 
-extension GameByIndex on IsarCollection<Game> {
-  Future<Game?> getByUuid(String uuid) {
+extension ScheduleEventByIndex on IsarCollection<ScheduleEvent> {
+  Future<ScheduleEvent?> getByUuid(String uuid) {
     return getByIndex(r'uuid', [uuid]);
   }
 
-  Game? getByUuidSync(String uuid) {
+  ScheduleEvent? getByUuidSync(String uuid) {
     return getByIndexSync(r'uuid', [uuid]);
   }
 
@@ -255,12 +272,12 @@ extension GameByIndex on IsarCollection<Game> {
     return deleteByIndexSync(r'uuid', [uuid]);
   }
 
-  Future<List<Game?>> getAllByUuid(List<String> uuidValues) {
+  Future<List<ScheduleEvent?>> getAllByUuid(List<String> uuidValues) {
     final values = uuidValues.map((e) => [e]).toList();
     return getAllByIndex(r'uuid', values);
   }
 
-  List<Game?> getAllByUuidSync(List<String> uuidValues) {
+  List<ScheduleEvent?> getAllByUuidSync(List<String> uuidValues) {
     final values = uuidValues.map((e) => [e]).toList();
     return getAllByIndexSync(r'uuid', values);
   }
@@ -275,33 +292,37 @@ extension GameByIndex on IsarCollection<Game> {
     return deleteAllByIndexSync(r'uuid', values);
   }
 
-  Future<Id> putByUuid(Game object) {
+  Future<Id> putByUuid(ScheduleEvent object) {
     return putByIndex(r'uuid', object);
   }
 
-  Id putByUuidSync(Game object, {bool saveLinks = true}) {
+  Id putByUuidSync(ScheduleEvent object, {bool saveLinks = true}) {
     return putByIndexSync(r'uuid', object, saveLinks: saveLinks);
   }
 
-  Future<List<Id>> putAllByUuid(List<Game> objects) {
+  Future<List<Id>> putAllByUuid(List<ScheduleEvent> objects) {
     return putAllByIndex(r'uuid', objects);
   }
 
-  List<Id> putAllByUuidSync(List<Game> objects, {bool saveLinks = true}) {
+  List<Id> putAllByUuidSync(List<ScheduleEvent> objects,
+      {bool saveLinks = true}) {
     return putAllByIndexSync(r'uuid', objects, saveLinks: saveLinks);
   }
 }
 
-extension GameQueryWhereSort on QueryBuilder<Game, Game, QWhere> {
-  QueryBuilder<Game, Game, QAfterWhere> anyId() {
+extension ScheduleEventQueryWhereSort
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QWhere> {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
   }
 }
 
-extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
-  QueryBuilder<Game, Game, QAfterWhereClause> idEqualTo(Id id) {
+extension ScheduleEventQueryWhere
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QWhereClause> {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> idEqualTo(
+      Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
         lower: id,
@@ -310,7 +331,8 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterWhereClause> idNotEqualTo(Id id) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> idNotEqualTo(
+      Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -332,7 +354,8 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterWhereClause> idGreaterThan(Id id,
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> idGreaterThan(
+      Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -341,7 +364,8 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterWhereClause> idLessThan(Id id,
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> idLessThan(
+      Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
@@ -350,7 +374,7 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterWhereClause> idBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> idBetween(
     Id lowerId,
     Id upperId, {
     bool includeLower = true,
@@ -366,7 +390,8 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterWhereClause> uuidEqualTo(String uuid) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> uuidEqualTo(
+      String uuid) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
         indexName: r'uuid',
@@ -375,7 +400,8 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterWhereClause> uuidNotEqualTo(String uuid) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterWhereClause> uuidNotEqualTo(
+      String uuid) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
@@ -410,182 +436,56 @@ extension GameQueryWhere on QueryBuilder<Game, Game, QWhereClause> {
   }
 }
 
-extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+extension ScheduleEventQueryFilter
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QFilterCondition> {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      createdAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'awardsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'awardsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'awardsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'awardsJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'awardsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'awardsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'awardsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'awardsJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'awardsJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> awardsJsonIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'awardsJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> currentQuarterEqualTo(
-      int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'currentQuarter',
+        property: r'createdAt',
         value: value,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> currentQuarterGreaterThan(
-    int value, {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      createdAtGreaterThan(
+    DateTime value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'currentQuarter',
+        property: r'createdAt',
         value: value,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> currentQuarterLessThan(
-    int value, {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      createdAtLessThan(
+    DateTime value, {
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'currentQuarter',
+        property: r'createdAt',
         value: value,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> currentQuarterBetween(
-    int lower,
-    int upper, {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      createdAtBetween(
+    DateTime lower,
+    DateTime upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'currentQuarter',
+        property: r'createdAt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -594,7 +494,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> deletedAtIsNull() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      deletedAtIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
         property: r'deletedAt',
@@ -602,7 +503,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> deletedAtIsNotNull() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      deletedAtIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
         property: r'deletedAt',
@@ -610,8 +512,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> deletedAtEqualTo(
-      DateTime? value) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      deletedAtEqualTo(DateTime? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'deletedAt',
@@ -620,7 +522,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> deletedAtGreaterThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      deletedAtGreaterThan(
     DateTime? value, {
     bool include = false,
   }) {
@@ -633,7 +536,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> deletedAtLessThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      deletedAtLessThan(
     DateTime? value, {
     bool include = false,
   }) {
@@ -646,7 +550,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> deletedAtBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      deletedAtBetween(
     DateTime? lower,
     DateTime? upper, {
     bool includeLower = true,
@@ -663,7 +568,82 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> idEqualTo(Id value) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      endsAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'endsAt',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      endsAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'endsAt',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      endsAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'endsAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      endsAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'endsAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      endsAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'endsAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      endsAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'endsAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> idEqualTo(
+      Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',
@@ -672,7 +652,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> idGreaterThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      idGreaterThan(
     Id value, {
     bool include = false,
   }) {
@@ -685,7 +666,7 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> idLessThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> idLessThan(
     Id value, {
     bool include = false,
   }) {
@@ -698,7 +679,7 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> idBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> idBetween(
     Id lower,
     Id upper, {
     bool includeLower = true,
@@ -715,681 +696,40 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'presentPlayerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'presentPlayerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'presentPlayerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'presentPlayerIds',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'presentPlayerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'presentPlayerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementContains(String value,
-          {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'presentPlayerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementMatches(String pattern,
-          {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'presentPlayerIds',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'presentPlayerIds',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsElementIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'presentPlayerIds',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> presentPlayerIdsLengthEqualTo(
-      int length) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'presentPlayerIds',
-        length,
-        true,
-        length,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> presentPlayerIdsIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'presentPlayerIds',
-        0,
-        true,
-        0,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> presentPlayerIdsIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'presentPlayerIds',
-        0,
-        false,
-        999999,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsLengthLessThan(
-    int length, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'presentPlayerIds',
-        0,
-        true,
-        length,
-        include,
-      );
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      presentPlayerIdsLengthGreaterThan(
-    int length, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'presentPlayerIds',
-        length,
-        include,
-        999999,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> presentPlayerIdsLengthBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'presentPlayerIds',
-        lower,
-        includeLower,
-        upper,
-        includeUpper,
-      );
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'quarterLineupsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'quarterLineupsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'quarterLineupsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'quarterLineupsJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'quarterLineupsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'quarterLineupsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'quarterLineupsJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'quarterLineupsJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quarterLineupsJsonIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'quarterLineupsJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      quarterLineupsJsonIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'quarterLineupsJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'quartersPlayedJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'quartersPlayedJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'quartersPlayedJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'quartersPlayedJson',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'quartersPlayedJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'quartersPlayedJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'quartersPlayedJson',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'quartersPlayedJson',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersPlayedJsonIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'quartersPlayedJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition>
-      quartersPlayedJsonIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'quartersPlayedJson',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersTotalEqualTo(
-      int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'quartersTotal',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersTotalGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'quartersTotal',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersTotalLessThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'quartersTotal',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> quartersTotalBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'quartersTotal',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> schemaVersionEqualTo(
-      int value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'schemaVersion',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> schemaVersionGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'schemaVersion',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> schemaVersionLessThan(
-    int value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'schemaVersion',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> schemaVersionBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'schemaVersion',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> startedAtEqualTo(
-      DateTime value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'startedAt',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> startedAtGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'startedAt',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> startedAtLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'startedAt',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> startedAtBetween(
-    DateTime lower,
-    DateTime upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'startedAt',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdIsNull() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'teamId',
+        property: r'location',
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdIsNotNull() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'teamId',
+        property: r'location',
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdEqualTo(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'teamId',
+        property: r'location',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdGreaterThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1397,14 +737,15 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'teamId',
+        property: r'location',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdLessThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1412,14 +753,15 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'teamId',
+        property: r'location',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1428,6 +770,562 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
+        property: r'location',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'location',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'location',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'location',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      locationIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'location',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'notes',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'notes',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'notes',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'notes',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'notes',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notes',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      notesIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'notes',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'opponent',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'opponent',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'opponent',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'opponent',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'opponent',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'opponent',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'opponent',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'opponent',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'opponent',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'opponent',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'opponent',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      opponentIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'opponent',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      schemaVersionEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'schemaVersion',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      schemaVersionGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'schemaVersion',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      schemaVersionLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'schemaVersion',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      schemaVersionBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'schemaVersion',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      startsAtEqualTo(DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'startsAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      startsAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'startsAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      startsAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'startsAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      startsAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'startsAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'teamId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'teamId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'teamId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
         property: r'teamId',
         lower: lower,
         includeLower: includeLower,
@@ -1438,7 +1336,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdStartsWith(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1451,7 +1350,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdEndsWith(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1464,8 +1364,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdContains(String value,
-      {bool caseSensitive = true}) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
         property: r'teamId',
@@ -1475,8 +1375,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdMatches(String pattern,
-      {bool caseSensitive = true}) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
         property: r'teamId',
@@ -1486,7 +1386,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdIsEmpty() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'teamId',
@@ -1495,7 +1396,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> teamIdIsNotEmpty() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      teamIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'teamId',
@@ -1504,8 +1406,63 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedAtEqualTo(
-      DateTime value) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> typeEqualTo(
+      ScheduleEventType value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      typeGreaterThan(
+    ScheduleEventType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      typeLessThan(
+    ScheduleEventType value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'type',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> typeBetween(
+    ScheduleEventType lower,
+    ScheduleEventType upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'type',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'updatedAt',
@@ -1514,7 +1471,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedAtGreaterThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedAtGreaterThan(
     DateTime value, {
     bool include = false,
   }) {
@@ -1527,7 +1485,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedAtLessThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedAtLessThan(
     DateTime value, {
     bool include = false,
   }) {
@@ -1540,7 +1499,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedAtBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedAtBetween(
     DateTime lower,
     DateTime upper, {
     bool includeLower = true,
@@ -1557,36 +1517,40 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByIsNull() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByIsNotNull() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByEqualTo(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdEqualTo(
     String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByGreaterThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdGreaterThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1594,14 +1558,15 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByLessThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdLessThan(
     String? value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1609,14 +1574,15 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdBetween(
     String? lower,
     String? upper, {
     bool includeLower = true,
@@ -1625,7 +1591,7 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1635,75 +1601,77 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByStartsWith(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByEndsWith(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByContains(
-      String value,
-      {bool caseSensitive = true}) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: value,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         wildcard: pattern,
         caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByIsEmpty() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: '',
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> updatedByIsNotEmpty() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      updatedByUserIdIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'updatedBy',
+        property: r'updatedByUserId',
         value: '',
       ));
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidEqualTo(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> uuidEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1716,7 +1684,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidGreaterThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1731,7 +1700,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidLessThan(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -1746,7 +1716,7 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidBetween(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> uuidBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -1765,7 +1735,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidStartsWith(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1778,7 +1749,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidEndsWith(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
@@ -1791,8 +1763,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidContains(String value,
-      {bool caseSensitive = true}) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
         property: r'uuid',
@@ -1802,7 +1774,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidMatches(String pattern,
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition> uuidMatches(
+      String pattern,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
@@ -1813,7 +1786,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidIsEmpty() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'uuid',
@@ -1822,7 +1796,8 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Game, Game, QAfterFilterCondition> uuidIsNotEmpty() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterFilterCondition>
+      uuidIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'uuid',
@@ -1832,395 +1807,444 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
   }
 }
 
-extension GameQueryObject on QueryBuilder<Game, Game, QFilterCondition> {}
+extension ScheduleEventQueryObject
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QFilterCondition> {}
 
-extension GameQueryLinks on QueryBuilder<Game, Game, QFilterCondition> {}
+extension ScheduleEventQueryLinks
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QFilterCondition> {}
 
-extension GameQuerySortBy on QueryBuilder<Game, Game, QSortBy> {
-  QueryBuilder<Game, Game, QAfterSortBy> sortByAwardsJson() {
+extension ScheduleEventQuerySortBy
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QSortBy> {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'awardsJson', Sort.asc);
+      return query.addSortBy(r'createdAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByAwardsJsonDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'awardsJson', Sort.desc);
+      return query.addSortBy(r'createdAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByCurrentQuarter() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'currentQuarter', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterSortBy> sortByCurrentQuarterDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'currentQuarter', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterSortBy> sortByDeletedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByDeletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deletedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByDeletedAtDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByDeletedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deletedAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByQuarterLineupsJson() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByEndsAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quarterLineupsJson', Sort.asc);
+      return query.addSortBy(r'endsAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByQuarterLineupsJsonDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByEndsAtDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quarterLineupsJson', Sort.desc);
+      return query.addSortBy(r'endsAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByQuartersPlayedJson() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByLocation() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersPlayedJson', Sort.asc);
+      return query.addSortBy(r'location', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByQuartersPlayedJsonDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByLocationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersPlayedJson', Sort.desc);
+      return query.addSortBy(r'location', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByQuartersTotal() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByNotes() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersTotal', Sort.asc);
+      return query.addSortBy(r'notes', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByQuartersTotalDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByNotesDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersTotal', Sort.desc);
+      return query.addSortBy(r'notes', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortBySchemaVersion() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByOpponent() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'opponent', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByOpponentDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'opponent', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortBySchemaVersion() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'schemaVersion', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortBySchemaVersionDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortBySchemaVersionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'schemaVersion', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByStartedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByStartsAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'startedAt', Sort.asc);
+      return query.addSortBy(r'startsAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByStartedAtDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByStartsAtDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'startedAt', Sort.desc);
+      return query.addSortBy(r'startsAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByTeamId() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByTeamId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'teamId', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByTeamIdDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByTeamIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'teamId', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByUpdatedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByUpdatedAtDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByUpdatedBy() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByUpdatedByUserId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'updatedBy', Sort.asc);
+      return query.addSortBy(r'updatedByUserId', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByUpdatedByDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      sortByUpdatedByUserIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'updatedBy', Sort.desc);
+      return query.addSortBy(r'updatedByUserId', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByUuid() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> sortByUuidDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> sortByUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.desc);
     });
   }
 }
 
-extension GameQuerySortThenBy on QueryBuilder<Game, Game, QSortThenBy> {
-  QueryBuilder<Game, Game, QAfterSortBy> thenByAwardsJson() {
+extension ScheduleEventQuerySortThenBy
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QSortThenBy> {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'awardsJson', Sort.asc);
+      return query.addSortBy(r'createdAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByAwardsJsonDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'awardsJson', Sort.desc);
+      return query.addSortBy(r'createdAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByCurrentQuarter() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'currentQuarter', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterSortBy> thenByCurrentQuarterDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'currentQuarter', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Game, Game, QAfterSortBy> thenByDeletedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByDeletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deletedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByDeletedAtDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByDeletedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'deletedAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenById() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByEndsAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'endsAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByEndsAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'endsAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByIdDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByQuarterLineupsJson() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByLocation() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quarterLineupsJson', Sort.asc);
+      return query.addSortBy(r'location', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByQuarterLineupsJsonDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByLocationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quarterLineupsJson', Sort.desc);
+      return query.addSortBy(r'location', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByQuartersPlayedJson() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByNotes() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersPlayedJson', Sort.asc);
+      return query.addSortBy(r'notes', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByQuartersPlayedJsonDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByNotesDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersPlayedJson', Sort.desc);
+      return query.addSortBy(r'notes', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByQuartersTotal() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByOpponent() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersTotal', Sort.asc);
+      return query.addSortBy(r'opponent', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByQuartersTotalDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByOpponentDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'quartersTotal', Sort.desc);
+      return query.addSortBy(r'opponent', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenBySchemaVersion() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenBySchemaVersion() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'schemaVersion', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenBySchemaVersionDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenBySchemaVersionDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'schemaVersion', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByStartedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByStartsAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'startedAt', Sort.asc);
+      return query.addSortBy(r'startsAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByStartedAtDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByStartsAtDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'startedAt', Sort.desc);
+      return query.addSortBy(r'startsAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByTeamId() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByTeamId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'teamId', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByTeamIdDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByTeamIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'teamId', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByUpdatedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'type', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByUpdatedAtDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByUpdatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByUpdatedBy() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByUpdatedByUserId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'updatedBy', Sort.asc);
+      return query.addSortBy(r'updatedByUserId', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByUpdatedByDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy>
+      thenByUpdatedByUserIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'updatedBy', Sort.desc);
+      return query.addSortBy(r'updatedByUserId', Sort.desc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByUuid() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByUuid() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.asc);
     });
   }
 
-  QueryBuilder<Game, Game, QAfterSortBy> thenByUuidDesc() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QAfterSortBy> thenByUuidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uuid', Sort.desc);
     });
   }
 }
 
-extension GameQueryWhereDistinct on QueryBuilder<Game, Game, QDistinct> {
-  QueryBuilder<Game, Game, QDistinct> distinctByAwardsJson(
-      {bool caseSensitive = true}) {
+extension ScheduleEventQueryWhereDistinct
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'awardsJson', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'createdAt');
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByCurrentQuarter() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'currentQuarter');
-    });
-  }
-
-  QueryBuilder<Game, Game, QDistinct> distinctByDeletedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByDeletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'deletedAt');
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByPresentPlayerIds() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByEndsAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'presentPlayerIds');
+      return query.addDistinctBy(r'endsAt');
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByQuarterLineupsJson(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByLocation(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'quarterLineupsJson',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'location', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByQuartersPlayedJson(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByNotes(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'quartersPlayedJson',
-          caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'notes', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByQuartersTotal() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByOpponent(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'quartersTotal');
+      return query.addDistinctBy(r'opponent', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctBySchemaVersion() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct>
+      distinctBySchemaVersion() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'schemaVersion');
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByStartedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByStartsAt() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'startedAt');
+      return query.addDistinctBy(r'startsAt');
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByTeamId(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByTeamId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'teamId', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByUpdatedAt() {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'type');
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByUpdatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'updatedAt');
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByUpdatedBy(
-      {bool caseSensitive = true}) {
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct>
+      distinctByUpdatedByUserId({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'updatedBy', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'updatedByUserId',
+          caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<Game, Game, QDistinct> distinctByUuid(
+  QueryBuilder<ScheduleEvent, ScheduleEvent, QDistinct> distinctByUuid(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'uuid', caseSensitive: caseSensitive);
@@ -2228,87 +2252,89 @@ extension GameQueryWhereDistinct on QueryBuilder<Game, Game, QDistinct> {
   }
 }
 
-extension GameQueryProperty on QueryBuilder<Game, Game, QQueryProperty> {
-  QueryBuilder<Game, int, QQueryOperations> idProperty() {
+extension ScheduleEventQueryProperty
+    on QueryBuilder<ScheduleEvent, ScheduleEvent, QQueryProperty> {
+  QueryBuilder<ScheduleEvent, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
     });
   }
 
-  QueryBuilder<Game, String, QQueryOperations> awardsJsonProperty() {
+  QueryBuilder<ScheduleEvent, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'awardsJson');
+      return query.addPropertyName(r'createdAt');
     });
   }
 
-  QueryBuilder<Game, int, QQueryOperations> currentQuarterProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'currentQuarter');
-    });
-  }
-
-  QueryBuilder<Game, DateTime?, QQueryOperations> deletedAtProperty() {
+  QueryBuilder<ScheduleEvent, DateTime?, QQueryOperations> deletedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'deletedAt');
     });
   }
 
-  QueryBuilder<Game, List<String>, QQueryOperations>
-      presentPlayerIdsProperty() {
+  QueryBuilder<ScheduleEvent, DateTime?, QQueryOperations> endsAtProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'presentPlayerIds');
+      return query.addPropertyName(r'endsAt');
     });
   }
 
-  QueryBuilder<Game, String, QQueryOperations> quarterLineupsJsonProperty() {
+  QueryBuilder<ScheduleEvent, String?, QQueryOperations> locationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'quarterLineupsJson');
+      return query.addPropertyName(r'location');
     });
   }
 
-  QueryBuilder<Game, String, QQueryOperations> quartersPlayedJsonProperty() {
+  QueryBuilder<ScheduleEvent, String?, QQueryOperations> notesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'quartersPlayedJson');
+      return query.addPropertyName(r'notes');
     });
   }
 
-  QueryBuilder<Game, int, QQueryOperations> quartersTotalProperty() {
+  QueryBuilder<ScheduleEvent, String?, QQueryOperations> opponentProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'quartersTotal');
+      return query.addPropertyName(r'opponent');
     });
   }
 
-  QueryBuilder<Game, int, QQueryOperations> schemaVersionProperty() {
+  QueryBuilder<ScheduleEvent, int, QQueryOperations> schemaVersionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'schemaVersion');
     });
   }
 
-  QueryBuilder<Game, DateTime, QQueryOperations> startedAtProperty() {
+  QueryBuilder<ScheduleEvent, DateTime, QQueryOperations> startsAtProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'startedAt');
+      return query.addPropertyName(r'startsAt');
     });
   }
 
-  QueryBuilder<Game, String?, QQueryOperations> teamIdProperty() {
+  QueryBuilder<ScheduleEvent, String, QQueryOperations> teamIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'teamId');
     });
   }
 
-  QueryBuilder<Game, DateTime, QQueryOperations> updatedAtProperty() {
+  QueryBuilder<ScheduleEvent, ScheduleEventType, QQueryOperations>
+      typeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'type');
+    });
+  }
+
+  QueryBuilder<ScheduleEvent, DateTime, QQueryOperations> updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
     });
   }
 
-  QueryBuilder<Game, String?, QQueryOperations> updatedByProperty() {
+  QueryBuilder<ScheduleEvent, String?, QQueryOperations>
+      updatedByUserIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'updatedBy');
+      return query.addPropertyName(r'updatedByUserId');
     });
   }
 
-  QueryBuilder<Game, String, QQueryOperations> uuidProperty() {
+  QueryBuilder<ScheduleEvent, String, QQueryOperations> uuidProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'uuid');
     });

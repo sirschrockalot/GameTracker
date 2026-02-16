@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme.dart';
+import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
+import '../../domain/authorization/team_auth.dart';
+import '../../data/repositories/join_request_repository.dart';
 import '../../data/repositories/player_repository.dart';
 import '../../data/repositories/team_repository.dart';
+import '../../providers/current_user_provider.dart';
+import '../../providers/join_request_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/teams_provider.dart';
 import '../../providers/players_provider.dart';
@@ -90,15 +96,48 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       body: team == null
           ? const Center(child: Text('Team not found'))
           : playersAsync.when(
-              data: (allPlayers) => _TeamDetailBody(
-                team: team!,
-                allPlayers: allPlayers,
-                nameController: _nameController,
-                onSaveName: () => _saveName(ref, team!),
-                onRemovePlayer: (uuid) => _removePlayer(ref, team!, uuid),
-                onEditPlayer: (p) => _showEditPlayer(context, ref, p),
-                onAddPlayer: () => _showAddPlayerChoice(context, ref, team!, allPlayers),
-              ),
+              data: (allPlayers) {
+                final currentUserId = ref.watch(currentUserIdProvider);
+                final pendingAsync = ref.watch(pendingJoinRequestsProvider(team!.uuid));
+                final approvedAsync = ref.watch(approvedMembersProvider(team!.uuid));
+                final pendingRequests = pendingAsync.valueOrNull ?? [];
+                final approvedMembers = approvedAsync.valueOrNull ?? [];
+                final isApprovedMember = approvedMembers.any((m) => m.userId == currentUserId);
+                final canView = TeamAuth.canViewTeam(team!, currentUserId, isApprovedMember);
+                final canManage = TeamAuth.canManageTeam(team!, currentUserId);
+                if (!canView) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        "You don't have access to this team.",
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+                return _TeamDetailBody(
+                  team: team!,
+                  allPlayers: allPlayers,
+                  nameController: _nameController,
+                  onSaveName: () => _saveName(ref, team!),
+                  onRemovePlayer: (uuid) => _removePlayer(ref, team!, uuid),
+                  onEditPlayer: (p) => _showEditPlayer(context, ref, p),
+                  onAddPlayer: () => _showAddPlayerChoice(context, ref, team!, allPlayers),
+                  canManage: canManage,
+                  pendingRequests: pendingRequests,
+                  approvedMembers: approvedMembers,
+                  onApproveRequest: (r) => _approveRequest(context, ref, r),
+                  onRejectRequest: (r) => _rejectRequest(context, ref, r),
+                  onRevokeMember: (r) => _revokeMember(context, ref, r),
+                  onRotateCode: () => _rotateCode(context, ref, team!),
+                  onRotateCoachCode: () => _rotateCoachCode(context, ref, team!),
+                  onRotateParentCode: () => _rotateParentCode(context, ref, team!),
+                );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
             ),
@@ -159,11 +198,107 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     );
     if (result == null || result.name.isEmpty || !context.mounted) return;
     final isar = await ref.read(isarProvider.future);
-    final player = Player.create(uuid: const Uuid().v4(), name: result.name, skill: result.skill);
+    final player = Player.create(
+      uuid: const Uuid().v4(),
+      name: result.name,
+      skill: result.skill,
+      teamId: team.uuid,
+    );
     await PlayerRepository(isar).add(player);
     team.playerIds = List<String>.from(team.playerIds)..add(player.uuid);
     await TeamRepository(isar).update(team);
     ref.invalidate(playersFutureProvider);
+  }
+
+  Future<void> _approveRequest(
+    BuildContext context,
+    WidgetRef ref,
+    JoinRequest request,
+  ) async {
+    final isar = await ref.read(isarProvider.future);
+    final approvedBy = ref.read(currentUserIdProvider);
+    await JoinRequestRepository(isar).approve(request.uuid, approvedBy);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${request.coachName} approved')),
+      );
+    }
+  }
+
+  Future<void> _rejectRequest(
+    BuildContext context,
+    WidgetRef ref,
+    JoinRequest request,
+  ) async {
+    final isar = await ref.read(isarProvider.future);
+    await JoinRequestRepository(isar).reject(request.uuid);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Request from ${request.coachName} rejected')),
+      );
+    }
+  }
+
+  Future<void> _revokeMember(
+    BuildContext context,
+    WidgetRef ref,
+    JoinRequest member,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove member?'),
+        content: Text(
+          '${member.coachName} will be removed from the team. They can request to join again after 24 hours or with a new team code.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    final isar = await ref.read(isarProvider.future);
+    await JoinRequestRepository(isar).revoke(member.uuid);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${member.coachName} removed from team')),
+      );
+    }
+  }
+
+  Future<void> _rotateCode(BuildContext context, WidgetRef ref, Team team) async {
+    final isar = await ref.read(isarProvider.future);
+    final newCode = await TeamRepository(isar).rotateInviteCode(team.uuid);
+    if (!context.mounted || newCode == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('New code generated. Share it for new join requests.')),
+    );
+  }
+
+  Future<void> _rotateCoachCode(BuildContext context, WidgetRef ref, Team team) async {
+    final isar = await ref.read(isarProvider.future);
+    final newCode = await TeamRepository(isar).rotateCoachCode(team.uuid);
+    if (!context.mounted || newCode == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Coach code rotated. Share the new code for coach join requests.')),
+    );
+  }
+
+  Future<void> _rotateParentCode(BuildContext context, WidgetRef ref, Team team) async {
+    final isar = await ref.read(isarProvider.future);
+    final newCode = await TeamRepository(isar).rotateParentCode(team.uuid);
+    if (!context.mounted || newCode == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Parent code rotated. Share the new code for parent join requests.')),
+    );
   }
 
   Future<void> _showEditPlayer(
@@ -378,6 +513,15 @@ class _TeamDetailBody extends StatelessWidget {
     required this.onRemovePlayer,
     required this.onEditPlayer,
     required this.onAddPlayer,
+    required this.canManage,
+    required this.pendingRequests,
+    required this.approvedMembers,
+    required this.onApproveRequest,
+    required this.onRejectRequest,
+    required this.onRevokeMember,
+    this.onRotateCode,
+    this.onRotateCoachCode,
+    this.onRotateParentCode,
   });
 
   final Team team;
@@ -387,6 +531,15 @@ class _TeamDetailBody extends StatelessWidget {
   final void Function(String uuid) onRemovePlayer;
   final void Function(Player p) onEditPlayer;
   final VoidCallback onAddPlayer;
+  final bool canManage;
+  final List<JoinRequest> pendingRequests;
+  final List<JoinRequest> approvedMembers;
+  final void Function(JoinRequest request) onApproveRequest;
+  final void Function(JoinRequest request) onRejectRequest;
+  final void Function(JoinRequest member) onRevokeMember;
+  final VoidCallback? onRotateCode;
+  final VoidCallback? onRotateCoachCode;
+  final VoidCallback? onRotateParentCode;
 
   @override
   Widget build(BuildContext context) {
@@ -409,6 +562,7 @@ class _TeamDetailBody extends StatelessWidget {
         const SizedBox(height: 6),
         TextField(
           controller: nameController,
+          readOnly: !canManage,
           decoration: InputDecoration(
             hintText: 'Team name',
             filled: true,
@@ -416,15 +570,159 @@ class _TeamDetailBody extends StatelessWidget {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: onSaveName,
-            ),
+            suffixIcon: canManage
+                ? IconButton(
+                    icon: const Icon(Icons.check),
+                    onPressed: onSaveName,
+                  )
+                : null,
           ),
           textCapitalization: TextCapitalization.words,
-          onSubmitted: (_) => onSaveName(),
+          onSubmitted: (_) => canManage ? onSaveName() : null,
         ),
-        const SizedBox(height: 20),
+        if (canManage) ...[
+          Text(
+            'Team code (share to join)',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: SelectableText(
+                  team.inviteCode.isEmpty ? '—' : team.inviteCode,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                        color: team.inviteCode.isEmpty
+                            ? AppColors.textSecondary
+                            : AppColors.textPrimary,
+                      ),
+                ),
+              ),
+              if (team.inviteCode.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 22),
+                  tooltip: 'Copy code',
+                  color: AppColors.textSecondary,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: team.inviteCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Code copied')),
+                    );
+                  },
+                ),
+              if (onRotateCode != null)
+                TextButton.icon(
+                  onPressed: onRotateCode,
+                  icon: const Icon(Icons.refresh, size: 20),
+                  label: Text(team.inviteCode.isEmpty ? 'Generate code' : 'Rotate code'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryOrange,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Coach code',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: SelectableText(
+                  team.coachCode.isEmpty ? '—' : team.coachCode,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                        color: team.coachCode.isEmpty
+                            ? AppColors.textSecondary
+                            : AppColors.textPrimary,
+                      ),
+                ),
+              ),
+              if (team.coachCode.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 22),
+                  tooltip: 'Copy coach code',
+                  color: AppColors.textSecondary,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: team.coachCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coach code copied')),
+                    );
+                  },
+                ),
+              if (onRotateCoachCode != null)
+                TextButton.icon(
+                  onPressed: onRotateCoachCode,
+                  icon: const Icon(Icons.refresh, size: 20),
+                  label: Text(team.coachCode.isEmpty ? 'Generate code' : 'Rotate'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryOrange,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Parent code',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: SelectableText(
+                  team.parentCode.isEmpty ? '—' : team.parentCode,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                        color: team.parentCode.isEmpty
+                            ? AppColors.textSecondary
+                            : AppColors.textPrimary,
+                      ),
+                ),
+              ),
+              if (team.parentCode.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 22),
+                  tooltip: 'Copy parent code',
+                  color: AppColors.textSecondary,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: team.parentCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Parent code copied')),
+                    );
+                  },
+                ),
+              if (onRotateParentCode != null)
+                TextButton.icon(
+                  onPressed: onRotateParentCode,
+                  icon: const Icon(Icons.refresh, size: 20),
+                  label: Text(team.parentCode.isEmpty ? 'Generate code' : 'Rotate'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryOrange,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+        ],
         Text(
           '${assignedPlayers.length} players',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -465,24 +763,218 @@ class _TeamDetailBody extends StatelessWidget {
                       ),
                     ),
                     _SkillChip(skill: p.skill),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 22),
-                      color: AppColors.textSecondary,
-                      onPressed: () => onEditPlayer(p),
+                    if (canManage) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 22),
+                        color: AppColors.textSecondary,
+                        onPressed: () => onEditPlayer(p),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline, size: 22),
+                        color: AppColors.textSecondary,
+                        onPressed: () => onRemovePlayer(p.uuid),
+                      ),
+                    ],
+                  ],
+                ),
+              )),
+        if (canManage && pendingRequests.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const Text(
+            'Pending requests',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...pendingRequests.map((r) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.chipInactive),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            r.coachName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_roleRequestedLabel(r.role)} • ${_formatRequestedAt(r.requestedAt)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (r.note != null && r.note!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              r.note!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, size: 22),
-                      color: AppColors.textSecondary,
-                      onPressed: () => onRemovePlayer(p.uuid),
+                    TextButton(
+                      onPressed: () => onRejectRequest(r),
+                      child: const Text('Reject'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => onApproveRequest(r),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primaryOrange,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      child: const Text('Approve'),
                     ),
                   ],
                 ),
               )),
-        const SizedBox(height: 16),
-        _AddPlayerCard(onTap: onAddPlayer),
+        ],
+        if (canManage && approvedMembers.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          ..._membersGroupedByRole(team, approvedMembers).entries.map((e) {
+            final sectionTitle = e.key;
+            final members = e.value;
+            if (members.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sectionTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...members.map((m) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.chipInactive),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  m.coachName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _roleRequestedLabel(m.role),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Active',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.onCourtGreen,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (team.ownerUserId != m.userId)
+                            TextButton(
+                              onPressed: () => onRevokeMember(m),
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              child: const Text('Remove'),
+                            ),
+                        ],
+                      ),
+                    )),
+                const SizedBox(height: 12),
+              ],
+            );
+          }),
+        ],
+        if (canManage) ...[
+          const SizedBox(height: 16),
+          _AddPlayerCard(onTap: onAddPlayer),
+        ],
       ],
     );
+  }
+
+  static String _roleRequestedLabel(TeamMemberRole role) {
+    switch (role) {
+      case TeamMemberRole.owner:
+        return 'Owner';
+      case TeamMemberRole.coach:
+        return 'Coach';
+      case TeamMemberRole.parent:
+        return 'Parent';
+    }
+  }
+
+  /// Returns members grouped by role: Coaches (owner + coach), then Parents.
+  static Map<String, List<JoinRequest>> _membersGroupedByRole(
+    Team team,
+    List<JoinRequest> approvedMembers,
+  ) {
+    final coaches = approvedMembers
+        .where((m) => m.role == TeamMemberRole.owner || m.role == TeamMemberRole.coach)
+        .toList();
+    final parents =
+        approvedMembers.where((m) => m.role == TeamMemberRole.parent).toList();
+    coaches.sort((a, b) {
+      final aOwner = a.userId == team.ownerUserId ? 1 : 0;
+      final bOwner = b.userId == team.ownerUserId ? 1 : 0;
+      return bOwner.compareTo(aOwner);
+    });
+    return {'Coaches': coaches, 'Parents': parents};
+  }
+
+  static String _formatRequestedAt(DateTime at) {
+    final now = DateTime.now();
+    final diff = now.difference(at);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
   }
 }
 

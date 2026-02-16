@@ -19,7 +19,15 @@ class Player {
   @enumerated
   late Skill skill;
 
+  /// Team UUID this player belongs to (for multi-coach sync).
+  String? teamId;
+
   late DateTime createdAt;
+
+  late DateTime updatedAt;
+  String? updatedBy;
+  DateTime? deletedAt;
+  late int schemaVersion;
 
   Player();
 
@@ -27,6 +35,13 @@ class Player {
     required this.uuid,
     required this.name,
     this.skill = Skill.developing,
+    this.teamId,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    DateTime? updatedAt,
+    this.updatedBy,
+    this.deletedAt,
+    int schemaVersion = 1,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now(),
+        schemaVersion = schemaVersion;
 }
