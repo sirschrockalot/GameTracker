@@ -20,7 +20,7 @@ class JoinRequestValidators {
           lastWasSpace = true;
         }
       } else {
-        buffer.writeRune(rune);
+        buffer.writeCharCode(rune);
         lastWasSpace = false;
       }
     }

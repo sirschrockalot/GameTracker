@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/isar/models/join_request.dart';
+import '../core/feature_flags.dart';
 import '../features/teams/teams_list_screen.dart';
 import '../features/teams/team_detail_screen.dart';
 import '../features/teams/team_access_blocked_screen.dart';
@@ -52,6 +53,13 @@ final goRouter = GoRouter(
   redirect: (context, state) async {
     final container = ProviderScope.containerOf(context);
     final loc = state.matchedLocation;
+
+    // If membership/parent portal features are disabled, skip auth-based redirects.
+    final authEnabled =
+        FeatureFlags.enableMembershipAuthV2 || FeatureFlags.enableParentPortal;
+    if (!authEnabled) {
+      return null;
+    }
 
     // Coach-only routes: redirect parent to teams list
     if (loc == '/game' || loc.startsWith('/game/') ||

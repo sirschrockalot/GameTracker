@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme.dart';
+import '../core/feature_flags.dart';
 import '../providers/join_request_provider.dart';
 
 class AppBottomNav extends ConsumerWidget {
@@ -46,7 +47,10 @@ class AppBottomNav extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final canAccessCoachAsync = ref.watch(canAccessCoachNavProvider);
-    final showCoachTabs = canAccessCoachAsync.valueOrNull ?? true;
+    // If membership/auth is disabled, always show full coach nav.
+    final showCoachTabs = !FeatureFlags.enableMembershipAuthV2
+        ? true
+        : (canAccessCoachAsync.valueOrNull ?? true);
 
     final items = showCoachTabs ? _allItems : [_allItems[0]];
     final paths = showCoachTabs ? _allPaths : [_allPaths[0]];

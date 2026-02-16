@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
+import '../../core/feature_flags.dart';
 import '../../data/isar/models/team.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../providers/isar_provider.dart';
@@ -51,16 +52,18 @@ class TeamsListScreen extends ConsumerWidget {
             Expanded(
               child: teamsAsync.when(
                 data: (teams) {
+                  final showJoin = FeatureFlags.enableMembershipAuthV2;
+                  final extraCards = showJoin ? 2 : 1;
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: teams.length + 2,
+                    itemCount: teams.length + extraCards,
                     itemBuilder: (context, i) {
-                      if (i == teams.length) {
+                      if (showJoin && i == teams.length) {
                         return _JoinTeamCard(
                           onTap: () => context.push('/teams/join'),
                         );
                       }
-                      if (i == teams.length + 1) {
+                      if (i == teams.length + (showJoin ? 1 : 0)) {
                         return _AddTeamCard(
                           onTap: () => context.push('/teams/new'),
                         );

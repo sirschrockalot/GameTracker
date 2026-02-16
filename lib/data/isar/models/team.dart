@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 
-import '../../core/team_code_generator.dart';
+import '../../../core/team_code_generator.dart';
 
 part 'team.g.dart';
 

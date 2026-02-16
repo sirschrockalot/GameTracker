@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme.dart';
+import '../../core/feature_flags.dart';
 import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/team.dart';
-import '../../domain/authorization/team_auth.dart';
 import '../../domain/validation/join_request_validators.dart';
 import '../../data/repositories/join_request_repository.dart';
 import '../../data/repositories/team_repository.dart';
@@ -61,7 +61,7 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
     final teamRepo = TeamRepository(isar);
     final normalizedCode = code.toUpperCase();
     Team? team;
-    TeamMemberRole requestedRole;
+    TeamMemberRole? requestedRole;
     final byCoach = await teamRepo.getByCoachCode(normalizedCode);
     if (byCoach != null) {
       team = byCoach;
@@ -73,7 +73,7 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
         requestedRole = TeamMemberRole.parent;
       }
     }
-    if (team == null || !mounted) {
+    if (team == null || requestedRole == null || !mounted) {
       setState(() => _submitting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,7 +85,8 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
     final userId = ref.read(currentUserIdProvider);
     final joinRepo = JoinRequestRepository(isar);
 
-    final blockMessage = await _checkJoinGuards(joinRepo, team, userId, requestedRole);
+    final blockMessage =
+        await _checkJoinGuards(joinRepo, team, userId, requestedRole);
     if (blockMessage != null) {
       setState(() => _submitting = false);
       if (mounted) {
@@ -149,6 +150,43 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!FeatureFlags.enableMembershipAuthV2) {
+      // Phase 1: hide join-by-code flow in production builds until auth is rolled out.
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: TextButton.icon(
+              onPressed: () => context.pop(),
+              icon: const Icon(Icons.arrow_back, size: 22),
+              label: const Text('Back'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+            ),
+          ),
+          title: const Text('Join team'),
+          centerTitle: true,
+        ),
+        body: const SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Join-by-code is not enabled in this build.\n\nFor the initial coach-only release, team access is managed directly by the owner.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+        bottomNavigationBar: const AppBottomNav(currentPath: '/teams'),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(

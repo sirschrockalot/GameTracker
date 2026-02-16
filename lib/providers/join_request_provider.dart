@@ -5,6 +5,7 @@ import '../data/isar/models/team.dart';
 import '../domain/authorization/team_auth.dart';
 import '../data/repositories/join_request_repository.dart';
 import '../data/repositories/team_repository.dart';
+import '../core/feature_flags.dart';
 import 'current_user_provider.dart';
 import 'isar_provider.dart';
 
@@ -50,6 +51,9 @@ final userTeamMembershipProvider =
 
 /// True if the current user can access coach-only routes (has at least one team where they can use coach tools).
 final canAccessCoachNavProvider = FutureProvider<bool>((ref) async {
+  // Before auth/membership v2, always allow coach nav (single-user coach app).
+  if (!FeatureFlags.enableMembershipAuthV2) return true;
+
   final isar = await ref.watch(isarProvider.future);
   final userId = ref.watch(currentUserIdProvider);
   final teams = await TeamRepository(isar).getAll();

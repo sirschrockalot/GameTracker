@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme.dart';
+import '../../core/feature_flags.dart';
 import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
@@ -627,101 +628,103 @@ class _TeamDetailBody extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Coach code',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: SelectableText(
-                  team.coachCode.isEmpty ? '—' : team.coachCode,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.bold,
-                        color: team.coachCode.isEmpty
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
-                      ),
-                ),
-              ),
-              if (team.coachCode.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 22),
-                  tooltip: 'Copy coach code',
-                  color: AppColors.textSecondary,
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: team.coachCode));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coach code copied')),
-                    );
-                  },
-                ),
-              if (onRotateCoachCode != null)
-                TextButton.icon(
-                  onPressed: onRotateCoachCode,
-                  icon: const Icon(Icons.refresh, size: 20),
-                  label: Text(team.coachCode.isEmpty ? 'Generate code' : 'Rotate'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryOrange,
+          if (FeatureFlags.enableMembershipAuthV2) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Coach code',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    team.coachCode.isEmpty ? '—' : team.coachCode,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                          color: team.coachCode.isEmpty
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                        ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Parent code',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: SelectableText(
-                  team.parentCode.isEmpty ? '—' : team.parentCode,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.bold,
-                        color: team.parentCode.isEmpty
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
-                      ),
-                ),
-              ),
-              if (team.parentCode.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 22),
-                  tooltip: 'Copy parent code',
-                  color: AppColors.textSecondary,
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: team.parentCode));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Parent code copied')),
-                    );
-                  },
-                ),
-              if (onRotateParentCode != null)
-                TextButton.icon(
-                  onPressed: onRotateParentCode,
-                  icon: const Icon(Icons.refresh, size: 20),
-                  label: Text(team.parentCode.isEmpty ? 'Generate code' : 'Rotate'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryOrange,
+                if (team.coachCode.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 22),
+                    tooltip: 'Copy coach code',
+                    color: AppColors.textSecondary,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: team.coachCode));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Coach code copied')),
+                      );
+                    },
+                  ),
+                if (onRotateCoachCode != null)
+                  TextButton.icon(
+                    onPressed: onRotateCoachCode,
+                    icon: const Icon(Icons.refresh, size: 20),
+                    label: Text(team.coachCode.isEmpty ? 'Generate code' : 'Rotate'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryOrange,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Parent code',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    team.parentCode.isEmpty ? '—' : team.parentCode,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                          color: team.parentCode.isEmpty
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                        ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 20),
+                if (team.parentCode.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 22),
+                    tooltip: 'Copy parent code',
+                    color: AppColors.textSecondary,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: team.parentCode));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Parent code copied')),
+                      );
+                    },
+                  ),
+                if (onRotateParentCode != null)
+                  TextButton.icon(
+                    onPressed: onRotateParentCode,
+                    icon: const Icon(Icons.refresh, size: 20),
+                    label: Text(team.parentCode.isEmpty ? 'Generate code' : 'Rotate'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryOrange,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
         ],
         Text(
           '${assignedPlayers.length} players',
@@ -779,7 +782,9 @@ class _TeamDetailBody extends StatelessWidget {
                   ],
                 ),
               )),
-        if (canManage && pendingRequests.isNotEmpty) ...[
+        if (FeatureFlags.enableMembershipAuthV2 &&
+            canManage &&
+            pendingRequests.isNotEmpty) ...[
           const SizedBox(height: 24),
           const Text(
             'Pending requests',
@@ -857,7 +862,9 @@ class _TeamDetailBody extends StatelessWidget {
                 ),
               )),
         ],
-        if (canManage && approvedMembers.isNotEmpty) ...[
+        if (FeatureFlags.enableMembershipAuthV2 &&
+            canManage &&
+            approvedMembers.isNotEmpty) ...[
           const SizedBox(height: 24),
           ..._membersGroupedByRole(team, approvedMembers).entries.map((e) {
             final sectionTitle = e.key;
