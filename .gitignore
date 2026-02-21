@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# iOS / Xcode
+ios/Pods/
+ios/.symlinks/
+**/xcuserdata/
+*.xcuserstate
+*.ipa
+*.apk
+
+# Secrets and local env (do not commit)
+.env
+.env.*
+.env.local
+*.keystore

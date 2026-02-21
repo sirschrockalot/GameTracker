@@ -9,14 +9,21 @@ import '../data/isar/models/team.dart';
 import '../data/isar/models/join_request.dart';
 
 final isarProvider = FutureProvider<Isar>((ref) async {
-  final dir = await getApplicationDocumentsDirectory();
-  final isar = await Isar.open(
-    isarSchemas,
-    directory: dir.path,
-    name: 'upward_lineup',
-  );
-  ref.onDispose(() => isar.close());
-  return isar;
+  try {
+    final dir = await getApplicationDocumentsDirectory();
+    final isar = await Isar.open(
+      isarSchemas,
+      directory: dir.path,
+      name: 'upward_lineup',
+    );
+    ref.onDispose(() => isar.close());
+    return isar;
+  } catch (e, st) {
+    throw Exception(
+      'Database failed to open: $e. '
+      'If this persists, try deleting and reinstalling the app.',
+    );
+  }
 });
 
 /// Clears all data from the database (players, games, teams, join requests).

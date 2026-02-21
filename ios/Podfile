@@ -34,6 +34,24 @@ target 'Runner' do
   end
 end
 
+# Isar: build isar_flutter_libs as dynamic framework so Dead Code Stripping
+# does not remove native symbols (fixes "Could not initialize IsarCore library" on iOS).
+dynamic_framework = ['isar_flutter_libs']
+pre_install do |installer|
+  Pod::Installer::Xcode::TargetValidator.send(:define_method, :verify_no_static_framework_transitive_dependencies) {}
+  installer.pod_targets.each do |pod|
+    if dynamic_framework.include?(pod.name)
+      puts "turn to dynamic framework name: " + pod.name
+      def pod.dynamic_framework
+        true
+      end
+      def pod.build_type
+        Pod::BuildType.dynamic_framework
+      end
+    end
+  end
+end
+
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)

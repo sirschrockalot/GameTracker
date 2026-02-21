@@ -162,10 +162,9 @@ class _AwardsScreenState extends ConsumerState<AwardsScreen> {
                               height: 52,
                               child: FilledButton(
                                 onPressed: () {
-                                  ref
-                                      .read(currentGameUuidProvider.notifier)
-                                      .state = null;
-                                  context.go(AppRoute.teams.path);
+                                  // Return to game dashboard without ending the game.
+                                  // User must tap "End Game" on the Game screen to end the game.
+                                  context.go(AppRoute.gameDashboard.path);
                                 },
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.saveAwardsGold,
