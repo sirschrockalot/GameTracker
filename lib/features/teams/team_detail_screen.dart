@@ -176,11 +176,13 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
             ),
           );
         }
+        final displayName = ref.watch(authStateProvider).valueOrNull?.displayName;
         return _TeamDetailBody(
           team: team,
           assignedPlayers: players,
           allPlayersAsync: playersAsync,
           nameController: nameController,
+          displayName: displayName,
           onSaveName: () => _saveName(ref, team),
           onSaveLogo: (kind, templateId, paletteId, monogramText) => _saveLogo(ref, team, kind, templateId, paletteId, monogramText),
           onRemovePlayer: (uuid) => _removePlayer(ref, team, uuid),
@@ -197,6 +199,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           onRotateParentCode: () => _rotateParentCode(context, ref, team),
           onSetDisplayName: () => _showSetDisplayName(context, ref),
           onEnableSync: (team.syncEnabled == true || !canManage) ? null : () => _confirmAndEnableSync(context, ref, team),
+          onResync: (team.syncEnabled == true && canManage) ? () => _confirmAndResync(context, ref, team) : null,
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -215,6 +218,24 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
           FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Enable Sync')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await _enableSync(context, ref, team);
+  }
+
+  Future<void> _confirmAndResync(BuildContext context, WidgetRef ref, Team team) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Resync'),
+        content: const Text(
+          'Upload your current roster and schedule to the cloud again? Use this if the first sync failed or data is out of date.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Resync')),
         ],
       ),
     );
@@ -717,6 +738,7 @@ class _TeamDetailBody extends StatelessWidget {
     required this.assignedPlayers,
     required this.allPlayersAsync,
     required this.nameController,
+    this.displayName,
     required this.onSaveName,
     this.onSaveLogo,
     required this.onRemovePlayer,
@@ -733,10 +755,13 @@ class _TeamDetailBody extends StatelessWidget {
     this.onRotateParentCode,
     this.onSetDisplayName,
     this.onEnableSync,
+    this.onResync,
   });
 
+  final String? displayName;
   final VoidCallback? onSetDisplayName;
   final VoidCallback? onEnableSync;
+  final VoidCallback? onResync;
 
   final Team team;
   final List<Player> assignedPlayers;
@@ -766,7 +791,12 @@ class _TeamDetailBody extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Display name', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
-            subtitle: const Text('How you appear to others (e.g. Coach Mike)', style: TextStyle(fontSize: 12)),
+            subtitle: Text(
+              (displayName != null && displayName!.isNotEmpty)
+                  ? displayName!
+                  : 'How you appear to others (e.g. Coach Mike)',
+              style: const TextStyle(fontSize: 12),
+            ),
             trailing: const Icon(Icons.edit, size: 20, color: AppColors.textSecondary),
             onTap: onSetDisplayName,
           ),
@@ -779,6 +809,16 @@ class _TeamDetailBody extends StatelessWidget {
             subtitle: const Text('Upload roster and schedule to the cloud', style: TextStyle(fontSize: 12)),
             trailing: const Icon(Icons.cloud_upload, size: 20, color: AppColors.textSecondary),
             onTap: onEnableSync,
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (onResync != null) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Resync', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
+            subtitle: const Text('Upload roster and schedule to the cloud again', style: TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.sync, size: 20, color: AppColors.textSecondary),
+            onTap: onResync,
           ),
           const SizedBox(height: 16),
         ],

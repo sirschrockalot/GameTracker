@@ -95,6 +95,19 @@ void main() {
         expect(counts2, {'b': 1, 'c': 1, 'd': 1, 'e': 1, 'f': 1});
         expect(counts2.containsKey('a'), false);
       });
+
+      test('quartersPlayedJson derived from lineups only; repeated recompute is deterministic (no drift)', () {
+        final lineups = {
+          1: ['a', 'b', 'c', 'd', 'e'],
+          2: ['b', 'c', 'd', 'e', 'f'],
+        };
+        final derived = GameSerialization.computeQuartersPlayedFromLineups(lineups);
+        final json = GameSerialization.encodeQuartersPlayed(derived);
+        final decoded = GameSerialization.decodeQuartersPlayed(json);
+        expect(decoded, derived);
+        final again = GameSerialization.computeQuartersPlayedFromLineups(lineups);
+        expect(GameSerialization.encodeQuartersPlayed(again), json);
+      });
     });
 
     group('Game awards getter/setter', () {

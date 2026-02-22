@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/auth_providers.dart';
+import '../../auth/game_api.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/game.dart';
@@ -10,6 +12,7 @@ import '../../data/repositories/game_repository.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/players_provider.dart';
+import '../../providers/teams_provider.dart';
 
 extension _FirstOrNullSummary<E> on Iterable<E> {
   E? get firstOrNull {
@@ -98,7 +101,18 @@ class GameSummaryScreen extends ConsumerWidget {
     );
     if (confirm != true || !context.mounted) return;
     final isar = await ref.read(isarProvider.future);
-    await GameRepository(isar).deleteGame(gameUuid);
+    final repo = GameRepository(isar);
+    final game = await repo.getByUuid(gameUuid);
+    final teamId = game?.teamId;
+    final teams = ref.read(teamsStreamProvider).valueOrNull ?? [];
+    final team = teamId != null ? teams.where((t) => t.uuid == teamId).firstOrNull : null;
+    if (team != null && team.syncEnabled) {
+      try {
+        final client = ref.read(authenticatedHttpClientProvider);
+        await deleteGame(client, team.uuid, gameUuid);
+      } catch (_) {}
+    }
+    await repo.deleteGame(gameUuid);
     ref.invalidate(gameDetailProvider(gameUuid));
     ref.invalidate(gamesStreamProvider);
     if (context.mounted) context.go('/history');

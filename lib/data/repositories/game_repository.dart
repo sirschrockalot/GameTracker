@@ -35,6 +35,24 @@ class GameRepository {
         .findAll();
   }
 
+  Future<List<Game>> listByTeamId(String teamId) async {
+    return _isar.games
+        .filter()
+        .teamIdEqualTo(teamId)
+        .deletedAtIsNull()
+        .sortByStartedAtDesc()
+        .findAll();
+  }
+
+  Stream<List<Game>> watchByTeamId(String teamId) {
+    return _isar.games
+        .filter()
+        .teamIdEqualTo(teamId)
+        .deletedAtIsNull()
+        .sortByStartedAtDesc()
+        .watch(fireImmediately: true);
+  }
+
   Stream<List<Game>> watchAllGames() {
     return _isar.games
         .filter()
@@ -134,4 +152,55 @@ class GameRepository {
     });
   }
 
+  /// Upsert from server payload. Sets quartersPlayedJson from quarterLineups (never from server).
+  Future<void> upsertFromServerGame(Map<String, dynamic> m) async {
+    final uuid = m['uuid'] as String?;
+    if (uuid == null) return;
+    final teamId = m['teamId'] as String? ?? '';
+    final startedAt = _parseDate(m['startedAt']) ?? DateTime.now();
+    final updatedAt = _parseDate(m['updatedAt']) ?? startedAt;
+    final quarterLineupsJson = m['quarterLineupsJson'] as String? ?? '{}';
+    final completedQuartersJson = m['completedQuartersJson'] as String? ?? '[]';
+    final awardsJson = m['awardsJson'] as String? ?? '{}';
+    final schemaVersion = m['schemaVersion'] as int? ?? 1;
+    final deletedAt = _parseDate(m['deletedAt']);
+    final lineups = GameSerialization.decodeQuarterLineups(quarterLineupsJson);
+    final presentPlayerIds = lineups.values
+        .expand((list) => list)
+        .toSet()
+        .toList();
+    final quartersPlayedJson = GameSerialization.encodeQuartersPlayed(
+      GameSerialization.computeQuartersPlayedFromLineups(lineups),
+    );
+    final completed = GameSerialization.decodeCompletedQuarters(completedQuartersJson);
+    final currentQuarter = completed.isEmpty ? 1 : (completed.reduce((a, b) => a > b ? a : b) + 1).clamp(1, 6);
+
+    await _isar.writeTxn(() async {
+      final existing = await _isar.games.filter().uuidEqualTo(uuid).findFirst();
+      final game = Game()
+        ..uuid = uuid
+        ..teamId = teamId
+        ..startedAt = startedAt
+        ..quartersTotal = 6
+        ..currentQuarter = currentQuarter
+        ..presentPlayerIds = presentPlayerIds
+        ..quarterLineupsJson = quarterLineupsJson
+        ..quartersPlayedJson = quartersPlayedJson
+        ..completedQuartersJson = completedQuartersJson
+        ..awardsJson = awardsJson
+        ..schemaVersion = schemaVersion
+        ..updatedAt = updatedAt
+        ..updatedBy = m['updatedBy'] as String?
+        ..deletedAt = deletedAt;
+      if (existing != null) game.id = existing.id;
+      await _isar.games.put(game);
+    });
+  }
+
+  static DateTime? _parseDate(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    final s = v.toString();
+    return DateTime.tryParse(s);
+  }
 }

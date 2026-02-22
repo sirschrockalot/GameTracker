@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../auth/auth_providers.dart';
+import '../../auth/game_api.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/game.dart';
@@ -222,6 +224,26 @@ class _WhosHereScreenState extends ConsumerState<WhosHereScreen> {
     ref.read(suggestedLineupProvider.notifier).state = null;
     ref.read(suggestedQuarterProvider.notifier).state = null;
     ref.read(swapSelectionProvider.notifier).state = null;
+    if (team.syncEnabled) {
+      try {
+        final client = ref.read(authenticatedHttpClientProvider);
+        final updated = await repo.getByUuid(game.uuid);
+        if (updated != null) {
+          final payload = {
+            'uuid': updated.uuid,
+            'teamId': updated.teamId,
+            'startedAt': updated.startedAt.toIso8601String(),
+            'quarterLineupsJson': updated.quarterLineupsJson,
+            'completedQuartersJson': updated.completedQuartersJson,
+            'awardsJson': updated.awardsJson,
+            'schemaVersion': updated.schemaVersion,
+          };
+          final res = await upsertGame(client, team.uuid, payload);
+          await repo.upsertFromServerGame(res);
+          ref.invalidate(gamesStreamProvider);
+        }
+      } catch (_) {}
+    }
     if (context.mounted) {
       context.go('/game');
     }

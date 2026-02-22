@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/auth_providers.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/game.dart';
 import '../../data/isar/models/player.dart';
+import '../../data/sync/game_sync.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/isar_provider.dart';
 import '../../providers/players_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
 
@@ -14,6 +17,26 @@ extension _FirstOrNullHistory<E> on Iterable<E> {
     final it = iterator;
     if (it.moveNext()) return it.current;
     return null;
+  }
+}
+
+Future<void> _pullLatest(WidgetRef ref) async {
+  final client = ref.read(authenticatedHttpClientProvider);
+  final isar = await ref.read(isarProvider.future);
+  try {
+    await pullGamesIntoIsar(client, isar);
+    ref.invalidate(gamesStreamProvider);
+    if (ref.context.mounted) {
+      ScaffoldMessenger.of(ref.context).showSnackBar(
+        const SnackBar(content: Text('Game history updated')),
+      );
+    }
+  } catch (e) {
+    if (ref.context.mounted) {
+      ScaffoldMessenger.of(ref.context).showSnackBar(
+        SnackBar(content: Text('Sync failed: $e')),
+      );
+    }
   }
 }
 
@@ -60,16 +83,32 @@ class HistoryScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.bar_chart, size: 20),
-                label: const Text('Season Totals'),
-                onPressed: () => context.push('/history/season-totals'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Row(
+                children: [
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.bar_chart, size: 20),
+                    label: const Text('Season Totals'),
+                    onPressed: () => context.push('/history/season-totals'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.sync, size: 20),
+                    label: const Text('Pull latest'),
+                    onPressed: () => _pullLatest(ref),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),
