@@ -822,6 +822,16 @@ class _TeamDetailBody extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+        if (canManage && FeatureFlags.enableMembershipAuthV2) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Share Team', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
+            subtitle: const Text('Invite coaches or parents with code or QR', style: TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.ios_share_rounded, size: 20, color: AppColors.textSecondary),
+            onTap: () => context.push('/teams/share/${team.uuid}'),
+          ),
+          const SizedBox(height: 16),
+        ],
         const Text(
           'Team name',
           style: TextStyle(
@@ -864,52 +874,56 @@ class _TeamDetailBody extends StatelessWidget {
         ],
         if (canManage) ...[
           const SizedBox(height: 24),
-          Text(
-            'Team code (share to join)',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: SelectableText(
-                  team.inviteCode.isEmpty ? '—' : team.inviteCode,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.bold,
-                        color: team.inviteCode.isEmpty
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
-                      ),
-                ),
-              ),
-              if (team.inviteCode.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 22),
-                  tooltip: 'Copy code',
-                  color: AppColors.textSecondary,
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: team.inviteCode));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Code copied')),
-                    );
-                  },
-                ),
-              if (onRotateCode != null)
-                TextButton.icon(
-                  onPressed: onRotateCode,
-                  icon: const Icon(Icons.refresh, size: 20),
-                  label: Text(team.inviteCode.isEmpty ? 'Generate code' : 'Rotate code'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryOrange,
+          // When coach/parent codes are enabled, only show those (share coach code for coaches, parent code for parents).
+          // Legacy "Team code" (inviteCode) is hidden to avoid confusion; join flow only accepts coach/parent codes.
+          if (!FeatureFlags.enableMembershipAuthV2) ...[
+            Text(
+              'Team code (share to join)',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    team.inviteCode.isEmpty ? '—' : team.inviteCode,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                          color: team.inviteCode.isEmpty
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                        ),
                   ),
                 ),
-            ],
-          ),
+                if (team.inviteCode.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 22),
+                    tooltip: 'Copy code',
+                    color: AppColors.textSecondary,
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: team.inviteCode));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Code copied')),
+                      );
+                    },
+                  ),
+                if (onRotateCode != null)
+                  TextButton.icon(
+                    onPressed: onRotateCode,
+                    icon: const Icon(Icons.refresh, size: 20),
+                    label: Text(team.inviteCode.isEmpty ? 'Generate code' : 'Rotate code'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryOrange,
+                    ),
+                  ),
+              ],
+            ),
+          ],
           if (FeatureFlags.enableMembershipAuthV2) ...[
             const SizedBox(height: 12),
             Text(

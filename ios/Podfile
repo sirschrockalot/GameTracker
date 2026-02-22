@@ -1,5 +1,5 @@
-# Firebase Auth requires iOS 15.0+
-platform :ios, '15.0'
+# Firebase Auth requires iOS 15.0+; mobile_scanner requires 15.5+
+platform :ios, '15.5'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'

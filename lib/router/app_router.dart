@@ -10,6 +10,8 @@ import '../features/teams/team_detail_screen.dart';
 import '../features/teams/team_access_blocked_screen.dart';
 import '../features/teams/create_team_screen.dart';
 import '../features/teams/join_team_screen.dart';
+import '../features/teams/share_team_screen.dart';
+import '../features/teams/scan_qr_screen.dart';
 import '../features/parent/parent_home_screen.dart';
 import '../features/game/game_dashboard_screen.dart';
 import '../features/game/whos_here_screen.dart';
@@ -70,6 +72,7 @@ final goRouter = GoRouter(
     }
 
     // Team detail: redirect by role to parent home or blocked screen
+    if (loc.startsWith('/teams/share/')) return null; // share screen: no redirect
     final teamDetailMatch = state.pathParameters['teamUuid'];
     if (loc.startsWith('/teams/') && teamDetailMatch != null &&
         !loc.endsWith('/pending') && !loc.endsWith('/blocked') &&
@@ -77,7 +80,7 @@ final goRouter = GoRouter(
       final teamUuid = state.uri.pathSegments.length >= 2
           ? state.uri.pathSegments[1]
           : teamDetailMatch;
-      if (teamUuid.isNotEmpty && teamUuid != 'join' && teamUuid != 'new') {
+      if (teamUuid.isNotEmpty && teamUuid != 'join' && teamUuid != 'new' && teamUuid != 'share') {
         final membership = await container.read(
           userTeamMembershipProvider(teamUuid).future,
         );
@@ -143,8 +146,36 @@ final goRouter = GoRouter(
         GoRoute(
           path: 'join',
           name: 'joinTeam',
-          pageBuilder: (context, state) =>
-              platformPageRoute(context, state, const JoinTeamScreen()),
+          pageBuilder: (context, state) {
+            final extra = state.extra is Map ? state.extra as Map<Object?, Object?> : null;
+            final initialCode = extra != null ? extra['code'] as String? : null;
+            return platformPageRoute(
+              context,
+              state,
+              JoinTeamScreen(initialCode: initialCode),
+            );
+          },
+          routes: [
+            GoRoute(
+              path: 'scan',
+              name: 'scanQr',
+              pageBuilder: (context, state) =>
+                  platformPageRoute(context, state, const ScanQrScreen()),
+            ),
+          ],
+        ),
+        // Share team at /teams/share/:teamUuid so route matches reliably (avoid nested :teamUuid/share)
+        GoRoute(
+          path: 'share/:teamUuid',
+          name: 'shareTeam',
+          pageBuilder: (context, state) {
+            final teamUuid = state.pathParameters['teamUuid'] ?? '';
+            return platformPageRoute(
+              context,
+              state,
+              ShareTeamScreen(teamUuid: teamUuid),
+            );
+          },
         ),
         GoRoute(
           path: ':teamUuid',

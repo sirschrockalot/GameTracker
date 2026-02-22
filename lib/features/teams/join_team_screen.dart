@@ -16,7 +16,9 @@ import '../../providers/isar_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
 
 class JoinTeamScreen extends ConsumerStatefulWidget {
-  const JoinTeamScreen({super.key});
+  const JoinTeamScreen({super.key, this.initialCode});
+
+  final String? initialCode;
 
   @override
   ConsumerState<JoinTeamScreen> createState() => _JoinTeamScreenState();
@@ -27,6 +29,17 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
   final _teamCodeController = TextEditingController();
   final _noteController = TextEditingController();
   bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final code = widget.initialCode;
+    if (code != null && code.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _teamCodeController.text = code;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -225,12 +238,26 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 20),
-              Text(
-                'Team code',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Team code',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => context.push('/teams/join/scan'),
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                    label: const Text('Scan QR'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryOrange,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               TextField(
