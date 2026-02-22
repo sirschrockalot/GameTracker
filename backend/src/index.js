@@ -10,8 +10,13 @@ const teamsRouter = require('./routes/teams');
 const scheduleRouter = require('./routes/schedule');
 const syncRouter = require('./routes/sync');
 
-if (!process.env.JWT_SECRET) {
-  console.error('JWT_SECRET is required');
+const hasMongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+const hasJwt = !!process.env.JWT_SECRET;
+if (!hasMongoUri || !hasJwt) {
+  const missing = [];
+  if (!hasMongoUri) missing.push('MONGODB_URI or MONGO_URI');
+  if (!hasJwt) missing.push('JWT_SECRET');
+  console.error('Missing required config:', missing.join(', '));
   process.exit(1);
 }
 
