@@ -13,7 +13,5 @@ const userSchema = new mongoose.Schema(
   { timestamps: false }
 );
 
-userSchema.index({ installId: 1 }, { unique: true });
-
 const User = mongoose.model('User', userSchema);
 module.exports = { User };
