@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../auth/auth_providers.dart';
 import '../data/isar/models/join_request.dart';
 import '../data/isar/models/team.dart';
 import '../domain/authorization/team_auth.dart';
@@ -39,10 +40,11 @@ final userTeamMembershipProvider =
     FutureProvider.family<UserTeamMembership, String>((ref, teamUuid) async {
   final isar = await ref.watch(isarProvider.future);
   final userId = ref.watch(currentUserIdProvider);
+  final installId = ref.watch(installIdProvider).valueOrNull;
   final teamRepo = TeamRepository(isar);
   final joinRepo = JoinRequestRepository(isar);
   final team = await teamRepo.getByUuid(teamUuid);
-  final isOwner = team?.ownerUserId == userId;
+  final isOwner = team != null && TeamAuth.isOwner(team, userId, installId);
   final membership = team != null
       ? await joinRepo.getEffectiveMembership(team.uuid, userId)
       : null;
@@ -56,11 +58,12 @@ final canAccessCoachNavProvider = FutureProvider<bool>((ref) async {
 
   final isar = await ref.watch(isarProvider.future);
   final userId = ref.watch(currentUserIdProvider);
+  final installId = ref.watch(installIdProvider).valueOrNull;
   final teams = await TeamRepository(isar).getAll();
   final joinRepo = JoinRequestRepository(isar);
   for (final team in teams) {
     final membership = await joinRepo.getEffectiveMembership(team.uuid, userId);
-    if (TeamAuth.canUseCoachTools(team, userId, membership)) return true;
+    if (TeamAuth.canUseCoachTools(team, userId, membership, installId)) return true;
   }
   return false;
 });

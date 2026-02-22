@@ -1,44 +1,60 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'firebase_init.dart';
+import 'auth_api.dart';
+import 'device_identity.dart';
+import 'api_client.dart';
 
-/// Whether Firebase was initialized successfully (config files present).
-final firebaseConfiguredProvider = Provider<bool>((ref) => firebaseConfigured);
+class AuthState {
+  const AuthState({required this.userId, this.token, this.displayName});
+  final String userId;
+  final String? token;
+  final String? displayName;
+}
 
-/// Auth state stream. Empty stream when Firebase not configured to avoid errors.
-final authStateProvider = StreamProvider<User?>((ref) {
-  if (!ref.watch(firebaseConfiguredProvider)) {
-    return const Stream.empty();
-  }
-  return FirebaseAuth.instance.authStateChanges();
-});
+final installIdProvider = FutureProvider<String>((ref) => getInstallId());
 
-/// Current user ID for ownership/approval. Falls back to 'local' when not signed in (minimal refactor).
-final currentUserIdProvider = Provider<String>((ref) {
-  final user = ref.watch(authStateProvider).valueOrNull;
-  return user?.uid ?? 'local';
-});
+final authStateProvider = AsyncNotifierProvider<AuthNotifier, AuthState?>(AuthNotifier.new);
 
-/// Last sign-in error; clear on retry. Used to show retry banner.
-final authErrorProvider = StateProvider<Object?>((ref) => null);
-
-/// Call to sign in anonymously. Sets [authErrorProvider] on failure.
-final signInAnonymouslyProvider = Provider<Future<void> Function()>((ref) {
-  return () async {
-    if (!ref.read(firebaseConfiguredProvider)) return;
-    ref.read(authErrorProvider.notifier).state = null;
-    try {
-      await FirebaseAuth.instance.signInAnonymously();
-    } catch (e) {
-      ref.read(authErrorProvider.notifier).state = e;
+class AuthNotifier extends AsyncNotifier<AuthState?> {
+  @override
+  Future<AuthState?> build() async {
+    final baseUrl = ref.read(apiBaseUrlProvider);
+    final state = await ensureRegistered(baseUrl);
+    if (state != null) {
+      return AuthState(userId: state.userId, token: state.token, displayName: state.displayName);
     }
-  };
+    final installId = await getInstallId();
+    return AuthState(userId: installId, token: null, displayName: null);
+  }
+
+  /// Re-register with new displayName and refresh stored token.
+  Future<void> updateDisplayName(String displayName) async {
+    final baseUrl = ref.read(apiBaseUrlProvider);
+    final installId = await getInstallId();
+    await register(baseUrl, installId, displayName);
+    ref.invalidateSelf();
+  }
+}
+
+/// Current user ID from auth state; offline/backend unreachable uses installId as fallback.
+final currentUserIdProvider = Provider<String>((ref) {
+  final auth = ref.watch(authStateProvider).valueOrNull;
+  final installId = ref.watch(installIdProvider).valueOrNull;
+  return auth?.userId ?? installId ?? 'local';
 });
 
-/// Firebase ID token for Heroku API. Returns null if not signed in.
-final idTokenProvider = FutureProvider<String?>((ref) async {
-  final user = ref.watch(authStateProvider).valueOrNull;
-  if (user == null) return null;
-  return user.getIdToken();
+/// JWT for backend requests. Null when not registered (offline fallback).
+final authTokenProvider = Provider<Future<String?>>((ref) async {
+  final auth = ref.read(authStateProvider).valueOrNull;
+  if (auth?.token != null) return auth!.token;
+  return getStoredToken();
+});
+
+/// Shared authenticated client. Attaches Bearer JWT to requests.
+final authenticatedHttpClientProvider = Provider<AuthenticatedHttpClient>((ref) {
+  final baseUrl = ref.watch(apiBaseUrlProvider);
+  return AuthenticatedHttpClient(
+    baseUrl: baseUrl,
+    getToken: () => ref.read(authTokenProvider),
+  );
 });

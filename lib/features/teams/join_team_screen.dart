@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../auth/auth_providers.dart';
 import '../../core/theme.dart';
 import '../../core/feature_flags.dart';
 import '../../data/isar/models/join_request.dart';
@@ -105,6 +106,9 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
       status: JoinRequestStatus.pending,
     );
     await joinRepo.add(request);
+    try {
+      await ref.read(authStateProvider.notifier).updateDisplayName(coachName);
+    } catch (_) {}
     setState(() => _submitting = false);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

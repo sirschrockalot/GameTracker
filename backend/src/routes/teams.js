@@ -4,6 +4,7 @@ const { Team } = require('../models/Team');
 const { TeamMember } = require('../models/TeamMember');
 const { getActiveTeamIds, isOwner, canManageTeam } = require('../utils/membership');
 const { generateUniqueCode } = require('../utils/codes');
+const { joinLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.post('/join', async (req, res, next) => {
+router.post('/join', joinLimiter, async (req, res, next) => {
   try {
     const userId = req.userId;
     const { code, coachName, note } = req.body;
@@ -53,18 +54,30 @@ router.post('/join', async (req, res, next) => {
     if (!team) {
       return res.status(404).json({ error: 'not_found', message: 'Invalid or expired code' });
     }
+    const activeMember = await TeamMember.findOne({
+      teamId: team.uuid,
+      userId,
+      status: 'active',
+      deletedAt: null,
+    });
+    if (activeMember) {
+      return res.status(409).json({
+        error: 'conflict',
+        message: 'Already an active member of this team',
+      });
+    }
+    const existingPending = await TeamMember.findOne({
+      teamId: team.uuid,
+      userId,
+      status: 'pending',
+      deletedAt: null,
+    });
+    if (existingPending) {
+      return res.status(200).json(toMemberJson(existingPending));
+    }
     let role = 'coach';
     if (team.coachCode === normalized) role = 'coach';
     else if (team.parentCode === normalized) role = 'parent';
-    const existing = await TeamMember.findOne({
-      teamId: team.uuid,
-      userId,
-      status: { $in: ['pending', 'active'] },
-      deletedAt: null,
-    });
-    if (existing) {
-      return res.status(400).json({ error: 'validation', message: 'Already requested or member' });
-    }
     const now = new Date();
     const member = await TeamMember.create({
       uuid: uuidv4(),

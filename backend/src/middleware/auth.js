@@ -1,21 +1,22 @@
-const { getAuth } = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 
-async function authMiddleware(req, res, next) {
+function authJwt(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'unauthorized', message: 'Missing or invalid Authorization header' });
   }
   const token = authHeader.slice(7);
   try {
-    const decoded = await getAuth().verifyIdToken(token);
-    req.userId = decoded.uid;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    if (!decoded.sub) {
+      return res.status(401).json({ error: 'unauthorized', message: 'Invalid token' });
+    }
+    req.userId = decoded.sub;
+    req.displayName = decoded.displayName ?? null;
     next();
   } catch (err) {
-    if (err.code === 'auth/id-token-expired' || err.code === 'auth/argument-error') {
-      return res.status(401).json({ error: 'unauthorized', message: 'Invalid or expired token' });
-    }
-    return res.status(403).json({ error: 'forbidden', message: 'Token verification failed' });
+    return res.status(401).json({ error: 'unauthorized', message: 'Invalid or expired token' });
   }
 }
 
-module.exports = { authMiddleware };
+module.exports = { authJwt };

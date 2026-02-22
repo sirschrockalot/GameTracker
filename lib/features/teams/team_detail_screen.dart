@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../auth/auth_providers.dart';
 import '../../core/theme.dart';
 import '../../core/feature_flags.dart';
 import '../../widgets/team_logo_avatar.dart';
@@ -76,7 +77,11 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       });
     }
 
-    final teamPlayersAsync = team != null ? ref.watch(playersForTeamProvider(team!.uuid)) : const AsyncValue.data([]);
+    final teamPlayersAsync = team != null
+        ? ref.watch(playersForTeamProvider(team!.uuid))
+        : AsyncValue.data(<Player>[]);
+    final authAsync = ref.watch(authStateProvider);
+    final installId = ref.watch(installIdProvider).valueOrNull;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -102,56 +107,106 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       ),
       body: team == null
           ? const Center(child: Text('Team not found'))
-          : teamPlayersAsync.when(
-              data: (assignedPlayers) {
-                final players = assignedPlayers as List<Player>;
-                final currentUserId = ref.watch(currentUserIdProvider);
-                final pendingAsync = ref.watch(pendingJoinRequestsProvider(team!.uuid));
-                final approvedAsync = ref.watch(approvedMembersProvider(team!.uuid));
-                final pendingRequests = pendingAsync.valueOrNull ?? [];
-                final approvedMembers = approvedAsync.valueOrNull ?? [];
-                final isApprovedMember = approvedMembers.any((m) => m.userId == currentUserId);
-                final canView = TeamAuth.canViewTeam(team!, currentUserId, isApprovedMember);
-                final canManage = TeamAuth.canManageTeam(team!, currentUserId);
-                if (!canView) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        "You don't have access to this team.",
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                }
-                return _TeamDetailBody(
-                  team: team!,
-                  assignedPlayers: players,
-                  allPlayersAsync: playersAsync,
-                  nameController: _nameController,
-                  onSaveName: () => _saveName(ref, team!),
-                  onSaveLogo: (kind, templateId, paletteId, monogramText) => _saveLogo(ref, team!, kind, templateId, paletteId, monogramText),
-                  onRemovePlayer: (uuid) => _removePlayer(ref, team!, uuid),
-                  onEditPlayer: (p) => _showEditPlayer(context, ref, p),
-                  onAddPlayer: () => _showAddPlayerChoice(context, ref, team!, players),
-                  canManage: canManage,
-                  pendingRequests: pendingRequests,
-                  approvedMembers: approvedMembers,
-                  onApproveRequest: (r) => _approveRequest(context, ref, r),
-                  onRejectRequest: (r) => _rejectRequest(context, ref, r),
-                  onRevokeMember: (r) => _revokeMember(context, ref, r),
-                  onRotateCode: () => _rotateCode(context, ref, team!),
-                  onRotateCoachCode: () => _rotateCoachCode(context, ref, team!),
-                  onRotateParentCode: () => _rotateParentCode(context, ref, team!),
-                );
-              },
+          : authAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (_, __) => _teamDetailContent(
+                ref, context, team!, teamPlayersAsync, playersAsync, _nameController,
+                installId,
+              ),
+              data: (_) => _teamDetailContent(
+                ref, context, team!, teamPlayersAsync, playersAsync, _nameController,
+                installId,
+              ),
             ),
     );
+  }
+
+  Widget _teamDetailContent(
+    WidgetRef ref,
+    BuildContext context,
+    Team team,
+    AsyncValue<List<Player>> teamPlayersAsync,
+    AsyncValue<List<Player>> playersAsync,
+    TextEditingController nameController,
+    String? installId,
+  ) {
+    return teamPlayersAsync.when(
+      data: (assignedPlayers) {
+        final players = assignedPlayers as List<Player>;
+        final currentUserId = ref.watch(currentUserIdProvider);
+        final pendingAsync = ref.watch(pendingJoinRequestsProvider(team.uuid));
+        final approvedAsync = ref.watch(approvedMembersProvider(team.uuid));
+        final pendingRequests = pendingAsync.valueOrNull ?? [];
+        final approvedMembers = approvedAsync.valueOrNull ?? [];
+        final isApprovedMember = approvedMembers.any((m) => m.userId == currentUserId);
+        final canView = TeamAuth.canViewTeam(team, currentUserId, isApprovedMember, installId);
+        final canManage = TeamAuth.canManageTeam(team, currentUserId, installId);
+        if (!canView) {
+          // Migrate: team may have been created with Firebase UID or 'local'; reclaim ownership for this device.
+          final canMigrate = team.ownerUserId != null &&
+              team.ownerUserId != currentUserId &&
+              team.ownerUserId != installId &&
+              (team.ownerUserId == 'local' || TeamAuth.looksLikeFirebaseUid(team.ownerUserId));
+          if (canMigrate) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _migrateTeamOwnerToCurrentUser(ref, team);
+            });
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                "You don't have access to this team.",
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+        return _TeamDetailBody(
+          team: team,
+          assignedPlayers: players,
+          allPlayersAsync: playersAsync,
+          nameController: nameController,
+          onSaveName: () => _saveName(ref, team),
+          onSaveLogo: (kind, templateId, paletteId, monogramText) => _saveLogo(ref, team, kind, templateId, paletteId, monogramText),
+          onRemovePlayer: (uuid) => _removePlayer(ref, team, uuid),
+          onEditPlayer: (p) => _showEditPlayer(context, ref, p),
+          onAddPlayer: () => _showAddPlayerChoice(context, ref, team, players),
+          canManage: canManage,
+          pendingRequests: pendingRequests,
+          approvedMembers: approvedMembers,
+          onApproveRequest: (r) => _approveRequest(context, ref, r),
+          onRejectRequest: (r) => _rejectRequest(context, ref, r),
+          onRevokeMember: (r) => _revokeMember(context, ref, r),
+          onRotateCode: () => _rotateCode(context, ref, team),
+          onRotateCoachCode: () => _rotateCoachCode(context, ref, team),
+          onRotateParentCode: () => _rotateParentCode(context, ref, team),
+          onSetDisplayName: () => _showSetDisplayName(context, ref),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  /// One-time migration: set team.ownerUserId to current user so we keep access after Firebase → JWT switch.
+  Future<void> _migrateTeamOwnerToCurrentUser(WidgetRef ref, Team team) async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId.isEmpty || userId == 'local') return;
+    team.ownerUserId = userId;
+    final isar = await ref.read(isarProvider.future);
+    await TeamRepository(isar).update(team, updatedBy: userId);
+    ref.invalidate(teamsStreamProvider);
+    ref.invalidate(playersForTeamProvider(team.uuid));
   }
 
   Future<void> _saveName(WidgetRef ref, Team team) async {
@@ -344,6 +399,51 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Parent code rotated. Share the new code for parent join requests.')),
     );
+  }
+
+  Future<void> _showSetDisplayName(BuildContext context, WidgetRef ref) async {
+    final auth = ref.read(authStateProvider).valueOrNull;
+    final current = auth?.displayName ?? '';
+    final controller = TextEditingController(text: current);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Display name'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Coach Mike (2–40 characters)',
+            border: OutlineInputBorder(),
+          ),
+          maxLength: 40,
+          textCapitalization: TextCapitalization.words,
+          autofocus: true,
+          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final v = controller.text.trim();
+              if (v.length >= 2) Navigator.of(ctx).pop(v);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && result.length >= 2 && context.mounted) {
+      try {
+        await ref.read(authStateProvider.notifier).updateDisplayName(result);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Display name updated')));
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update. Check network.')));
+        }
+      }
+    }
   }
 
   Future<void> _showEditPlayer(
@@ -569,7 +669,10 @@ class _TeamDetailBody extends StatelessWidget {
     this.onRotateCode,
     this.onRotateCoachCode,
     this.onRotateParentCode,
+    this.onSetDisplayName,
   });
+
+  final VoidCallback? onSetDisplayName;
 
   final Team team;
   final List<Player> assignedPlayers;
@@ -595,6 +698,16 @@ class _TeamDetailBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (onSetDisplayName != null) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Display name', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
+            subtitle: const Text('How you appear to others (e.g. Coach Mike)', style: TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.edit, size: 20, color: AppColors.textSecondary),
+            onTap: onSetDisplayName,
+          ),
+          const SizedBox(height: 16),
+        ],
         const Text(
           'Team name',
           style: TextStyle(

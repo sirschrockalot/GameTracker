@@ -1,19 +1,27 @@
 require('dotenv').config();
 const express = require('express');
 const { connectDb } = require('./config/db');
-const { initFirebase } = require('./config/firebase');
-const { authMiddleware } = require('./middleware/auth');
+const { authJwt } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/errorHandler');
+const { globalLimiter } = require('./middleware/rateLimit');
 const healthRouter = require('./routes/health');
+const authRouter = require('./routes/auth');
 const teamsRouter = require('./routes/teams');
 const scheduleRouter = require('./routes/schedule');
 const syncRouter = require('./routes/sync');
 
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET is required');
+  process.exit(1);
+}
+
 const app = express();
 app.use(express.json({ limit: '1mb' }));
+app.use(globalLimiter);
 
 app.use('/health', healthRouter);
-app.use(authMiddleware);
+app.use('/auth', authRouter);
+app.use(authJwt);
 app.use('/teams', teamsRouter);
 app.use('/teams', scheduleRouter);
 app.use('/sync', syncRouter);
@@ -27,7 +35,6 @@ const PORT = process.env.PORT || 3000;
 
 async function start() {
   await connectDb();
-  await initFirebase();
   app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
   });

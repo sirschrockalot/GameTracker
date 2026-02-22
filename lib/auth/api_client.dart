@@ -3,18 +3,15 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-import 'auth_providers.dart';
-
-/// Base URL for Heroku (or env). No trailing slash.
+/// Base URL for backend (no trailing slash). No /api prefix.
 final apiBaseUrlProvider = Provider<String>((ref) {
   return const String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://your-app.herokuapp.com/api',
+    defaultValue: 'https://roster-flow-api.herokuapp.com',
   );
 });
 
-/// HTTP client that attaches Authorization: Bearer <idToken> to all requests to [baseUrl].
-/// Use for Heroku API. Does not implement backend calls; shared utility only.
+/// HTTP client that attaches Authorization: Bearer <jwt> to all requests to [baseUrl].
 class AuthenticatedHttpClient {
   AuthenticatedHttpClient({
     required this.baseUrl,
@@ -79,12 +76,3 @@ class AuthenticatedHttpClient {
     }
   }
 }
-
-/// Provider for shared authenticated client. Depends on [apiBaseUrlProvider] and [idTokenProvider].
-final authenticatedHttpClientProvider = Provider<AuthenticatedHttpClient>((ref) {
-  final baseUrl = ref.watch(apiBaseUrlProvider);
-  return AuthenticatedHttpClient(
-    baseUrl: baseUrl,
-    getToken: () async => ref.read(idTokenProvider.future),
-  );
-});
