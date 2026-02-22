@@ -221,11 +221,6 @@ class _WhosHereScreenState extends ConsumerState<WhosHereScreen> {
       for (int q = 1; q <= AppConstants.quartersPerGame; q++) {
         await repo.updateLineupForQuarter(game.uuid, q, presentPlayerIds);
       }
-      final played = <String, int>{};
-      for (final uuid in presentPlayerIds) {
-        played[uuid] = AppConstants.quartersPerGame;
-      }
-      await repo.updateQuartersPlayed(game.uuid, played);
       await repo.updateCurrentQuarter(game.uuid, AppConstants.quartersPerGame);
     }
     ref.read(currentGameUuidProvider.notifier).state = game.uuid;

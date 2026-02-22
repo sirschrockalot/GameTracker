@@ -9,6 +9,7 @@ import '../../data/repositories/team_repository.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/teams_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
+import '../../widgets/team_logo_avatar.dart';
 
 class TeamsListScreen extends ConsumerWidget {
   const TeamsListScreen({super.key});
@@ -132,19 +133,7 @@ class _TeamCard extends StatelessWidget {
       color: Colors.white,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primaryOrange.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(
-            Icons.groups,
-            color: AppColors.primaryOrange,
-            size: 24,
-          ),
-        ),
+        leading: TeamLogoAvatar(team: team, size: 40),
         title: Text(
           team.name,
           style: const TextStyle(

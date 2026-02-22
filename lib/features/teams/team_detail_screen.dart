@@ -6,6 +6,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/theme.dart';
 import '../../core/feature_flags.dart';
+import '../../widgets/team_logo_avatar.dart';
+import '../../widgets/team_logo_picker.dart';
 import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
@@ -79,19 +81,21 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: TextButton.icon(
-            onPressed: () => context.pop(),
-            icon: const Icon(Icons.arrow_back, size: 22),
-            label: const Text('Back to Teams'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+          color: AppColors.textPrimary,
         ),
-        title: team != null ? Text('${team!.name} Players') : null,
+        title: team != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TeamLogoAvatar(team: team!, size: 36),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text('${team!.name} Players', overflow: TextOverflow.ellipsis)),
+                ],
+              )
+            : null,
         centerTitle: true,
       ),
       body: team == null
@@ -125,6 +129,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                   allPlayers: allPlayers,
                   nameController: _nameController,
                   onSaveName: () => _saveName(ref, team!),
+                  onSaveLogo: (kind, templateId, paletteId, monogramText) => _saveLogo(ref, team!, kind, templateId, paletteId, monogramText),
                   onRemovePlayer: (uuid) => _removePlayer(ref, team!, uuid),
                   onEditPlayer: (p) => _showEditPlayer(context, ref, p),
                   onAddPlayer: () => _showAddPlayerChoice(context, ref, team!, allPlayers),
@@ -151,6 +156,23 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     team.name = name;
     final isar = await ref.read(isarProvider.future);
     await TeamRepository(isar).update(team);
+  }
+
+  Future<void> _saveLogo(
+    WidgetRef ref,
+    Team team,
+    String kind,
+    String? templateId,
+    String? paletteId,
+    String? monogramText,
+  ) async {
+    team.logoKind = kind;
+    team.templateId = templateId;
+    team.paletteId = paletteId;
+    team.monogramText = monogramText;
+    final isar = await ref.read(isarProvider.future);
+    await TeamRepository(isar).update(team);
+    ref.invalidate(teamsStreamProvider);
   }
 
   Future<void> _removePlayer(WidgetRef ref, Team team, String playerUuid) async {
@@ -511,6 +533,7 @@ class _TeamDetailBody extends StatelessWidget {
     required this.allPlayers,
     required this.nameController,
     required this.onSaveName,
+    this.onSaveLogo,
     required this.onRemovePlayer,
     required this.onEditPlayer,
     required this.onAddPlayer,
@@ -529,6 +552,7 @@ class _TeamDetailBody extends StatelessWidget {
   final List<Player> allPlayers;
   final TextEditingController nameController;
   final VoidCallback onSaveName;
+  final void Function(String kind, String? templateId, String? paletteId, String? monogramText)? onSaveLogo;
   final void Function(String uuid) onRemovePlayer;
   final void Function(Player p) onEditPlayer;
   final VoidCallback onAddPlayer;
@@ -581,7 +605,19 @@ class _TeamDetailBody extends StatelessWidget {
           textCapitalization: TextCapitalization.words,
           onSubmitted: (_) => canManage ? onSaveName() : null,
         ),
+        if (canManage && onSaveLogo != null) ...[
+          const SizedBox(height: 24),
+          TeamLogoPicker(
+            teamName: nameController.text.trim().isEmpty ? team.name : nameController.text.trim(),
+            logoKind: team.logoKind ?? 'none',
+            templateId: team.templateId,
+            paletteId: team.paletteId,
+            monogramText: team.monogramText,
+            onSelect: onSaveLogo!,
+          ),
+        ],
         if (canManage) ...[
+          const SizedBox(height: 24),
           Text(
             'Team code (share to join)',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(

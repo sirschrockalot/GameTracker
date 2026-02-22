@@ -72,7 +72,7 @@ final seasonTotalsProvider = Provider<AsyncValue<List<PlayerSeasonTotals>>>((ref
   );
 });
 
-/// Compute quarters played per player for the current game (from Game.quartersPlayed).
+/// Compute quarters played per player for the current game (derived from lineups).
 Future<Map<String, int>> getQuartersPlayedForGame(
   Future<Isar> isarFuture,
   String gameUuid,
@@ -80,5 +80,5 @@ Future<Map<String, int>> getQuartersPlayedForGame(
   final isar = await isarFuture;
   final game = await GameRepository(isar).getByUuid(gameUuid);
   if (game == null) return {};
-  return Map.from(game.quartersPlayed);
+  return Map.from(game.quartersPlayedDerived);
 }

@@ -36,7 +36,7 @@ List<PlayerSeasonTotals> computeSeasonTotals(
     for (final uuid in present) {
       gamesPlayed[uuid] = (gamesPlayed[uuid] ?? 0) + 1;
     }
-    final qp = g.quartersPlayed;
+    final qp = g.quartersPlayedDerived;
     for (final e in qp.entries) {
       totalQuarters[e.key] = (totalQuarters[e.key] ?? 0) + e.value;
     }

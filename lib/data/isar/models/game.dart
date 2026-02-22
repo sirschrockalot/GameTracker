@@ -49,6 +49,10 @@ class Game {
   @Name('awardsJson')
   late String awardsJson;
 
+  /// JSON: list of quarter numbers (1..6) that are completed (locked).
+  @Name('completedQuartersJson')
+  late String completedQuartersJson;
+
   Game();
 
   Game.create({
@@ -65,11 +69,13 @@ class Game {
     String? quarterLineupsJson,
     String? quartersPlayedJson,
     String? awardsJson,
+    String? completedQuartersJson,
   })  : updatedAt = updatedAt ?? startedAt,
         schemaVersion = schemaVersion,
         quarterLineupsJson = quarterLineupsJson ?? GameSerialization.emptyQuarterLineupsJson,
         quartersPlayedJson = quartersPlayedJson ?? GameSerialization.emptyQuartersPlayedJson,
-        awardsJson = awardsJson ?? GameSerialization.emptyAwardsJson;
+        awardsJson = awardsJson ?? GameSerialization.emptyAwardsJson,
+        completedQuartersJson = completedQuartersJson ?? GameSerialization.emptyCompletedQuartersJson;
 
   /// Quarter index (1..6) -> list of 5 player UUIDs.
   @ignore
@@ -91,7 +97,17 @@ class Game {
     quartersPlayedJson = GameSerialization.encodeQuartersPlayed(value);
   }
 
-  /// Derived from [quarterLineups]; use for sync payloads instead of storing quartersPlayed.
+  /// Quarter numbers (1..6) that are completed (locked). Edits and Apply Suggestion disabled.
+  @ignore
+  Set<int> get completedQuarters =>
+      GameSerialization.decodeCompletedQuarters(completedQuartersJson);
+
+  @ignore
+  set completedQuarters(Set<int> value) {
+    completedQuartersJson = GameSerialization.encodeCompletedQuarters(value);
+  }
+
+  /// Derived from [quarterLineups]; use for summary and season totals (drift-free).
   @ignore
   Map<String, int> get quartersPlayedDerived =>
       GameSerialization.computeQuartersPlayedFromLineups(quarterLineups);

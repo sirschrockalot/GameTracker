@@ -6,7 +6,9 @@ import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/game.dart';
 import '../../data/isar/models/player.dart';
+import '../../data/repositories/game_repository.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/isar_provider.dart';
 import '../../providers/players_provider.dart';
 
 extension _FirstOrNullSummary<E> on Iterable<E> {
@@ -35,6 +37,13 @@ class GameSummaryScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          if (gameAsync.valueOrNull != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _showDeleteGameDialog(context, ref, gameUuid),
+            ),
+        ],
       ),
       body: gameAsync.when(
         data: (game) {
@@ -57,6 +66,42 @@ class GameSummaryScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
+  }
+
+  Future<void> _showDeleteGameDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String gameUuid,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete this game?'),
+        content: const Text(
+          'This cannot be undone. Schedule and players are not affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    final isar = await ref.read(isarProvider.future);
+    await GameRepository(isar).deleteGame(gameUuid);
+    ref.invalidate(gameDetailProvider(gameUuid));
+    ref.invalidate(gamesStreamProvider);
+    if (context.mounted) context.go('/history');
   }
 }
 
@@ -94,7 +139,7 @@ class _SummaryBody extends StatelessWidget {
     final date = game.startedAt;
     final dateStr =
         '${_month(date.month)} ${date.day}, ${date.year} · ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    final played = game.quartersPlayed;
+    final played = game.quartersPlayedDerived;
     final lineups = game.quarterLineups;
     final awards = game.awards;
 

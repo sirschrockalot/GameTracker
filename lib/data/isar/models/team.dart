@@ -37,6 +37,15 @@ class Team {
 
   late DateTime createdAt;
 
+  /// Logo: none | template | monogram | image. Null for teams created before logo fields existed.
+  String? logoKind;
+
+  String? templateId;
+  String? paletteId;
+  String? monogramText;
+  /// Reserved for future custom upload.
+  String? imagePath;
+
   Team();
 
   Team.create({
@@ -48,9 +57,15 @@ class Team {
     String? parentCode,
     this.ownerUserId,
     DateTime? createdAt,
+    String? logoKind,
+    this.templateId,
+    this.paletteId,
+    this.monogramText,
+    this.imagePath,
   })  : playerIds = playerIds ?? [],
         inviteCode = inviteCode ?? TeamCodeGenerator.generate(),
         coachCode = coachCode ?? TeamCodeGenerator.generate(),
         parentCode = parentCode ?? TeamCodeGenerator.generate(),
-        createdAt = createdAt ?? DateTime.now();
+        createdAt = createdAt ?? DateTime.now(),
+        logoKind = logoKind;
 }

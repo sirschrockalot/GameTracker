@@ -4,14 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme.dart';
+import '../../core/team_logo.dart';
 import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
+import '../../widgets/team_logo_picker.dart';
 import '../../data/repositories/player_repository.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../providers/current_user_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/players_provider.dart';
-import '../../providers/teams_provider.dart';
 
 extension _FirstOrNull<E> on Iterable<E> {
   E? get firstOrNull {
@@ -31,6 +32,10 @@ class CreateTeamScreen extends ConsumerStatefulWidget {
 class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   final TextEditingController _nameController = TextEditingController();
   final List<String> _selectedPlayerIds = [];
+  String _logoKind = kLogoKindTemplate;
+  String? _templateId = 'circle_ball';
+  String? _paletteId = 'slate_ice';
+  String? _monogramText;
 
   @override
   void dispose() {
@@ -89,6 +94,10 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       name: name,
       playerIds: List<String>.from(_selectedPlayerIds),
       ownerUserId: ownerUserId,
+      logoKind: _logoKind,
+      templateId: _templateId,
+      paletteId: _paletteId,
+      monogramText: _monogramText,
     );
     await TeamRepository(isar).add(team);
     if (!mounted) return;
@@ -137,6 +146,22 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                   ),
                 ),
                 textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 24),
+              TeamLogoPicker(
+                teamName: _nameController.text.trim(),
+                logoKind: _logoKind,
+                templateId: _templateId,
+                paletteId: _paletteId,
+                monogramText: _monogramText,
+                onSelect: (kind, templateId, paletteId, monogramText) {
+                  setState(() {
+                    _logoKind = kind;
+                    _templateId = templateId;
+                    _paletteId = paletteId;
+                    _monogramText = monogramText;
+                  });
+                },
               ),
               const SizedBox(height: 24),
               Row(

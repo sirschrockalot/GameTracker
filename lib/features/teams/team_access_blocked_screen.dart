@@ -60,17 +60,10 @@ class TeamAccessBlockedScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: TextButton.icon(
-            onPressed: () => context.go('/teams'),
-            icon: const Icon(Icons.arrow_back, size: 22),
-            label: const Text('Back to Teams'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/teams'),
+          color: AppColors.textPrimary,
         ),
         title: Text(displayName),
         centerTitle: true,

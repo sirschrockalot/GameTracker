@@ -22,63 +22,68 @@ const GameSchema = CollectionSchema(
       name: r'awardsJson',
       type: IsarType.string,
     ),
-    r'currentQuarter': PropertySchema(
+    r'completedQuartersJson': PropertySchema(
       id: 1,
+      name: r'completedQuartersJson',
+      type: IsarType.string,
+    ),
+    r'currentQuarter': PropertySchema(
+      id: 2,
       name: r'currentQuarter',
       type: IsarType.long,
     ),
     r'deletedAt': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'deletedAt',
       type: IsarType.dateTime,
     ),
     r'presentPlayerIds': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'presentPlayerIds',
       type: IsarType.stringList,
     ),
     r'quarterLineupsJson': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'quarterLineupsJson',
       type: IsarType.string,
     ),
     r'quartersPlayedJson': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'quartersPlayedJson',
       type: IsarType.string,
     ),
     r'quartersTotal': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'quartersTotal',
       type: IsarType.long,
     ),
     r'schemaVersion': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'schemaVersion',
       type: IsarType.long,
     ),
     r'startedAt': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'startedAt',
       type: IsarType.dateTime,
     ),
     r'teamId': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'teamId',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'updatedBy': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'updatedBy',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -118,6 +123,7 @@ int _gameEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.awardsJson.length * 3;
+  bytesCount += 3 + object.completedQuartersJson.length * 3;
   bytesCount += 3 + object.presentPlayerIds.length * 3;
   {
     for (var i = 0; i < object.presentPlayerIds.length; i++) {
@@ -150,18 +156,19 @@ void _gameSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.awardsJson);
-  writer.writeLong(offsets[1], object.currentQuarter);
-  writer.writeDateTime(offsets[2], object.deletedAt);
-  writer.writeStringList(offsets[3], object.presentPlayerIds);
-  writer.writeString(offsets[4], object.quarterLineupsJson);
-  writer.writeString(offsets[5], object.quartersPlayedJson);
-  writer.writeLong(offsets[6], object.quartersTotal);
-  writer.writeLong(offsets[7], object.schemaVersion);
-  writer.writeDateTime(offsets[8], object.startedAt);
-  writer.writeString(offsets[9], object.teamId);
-  writer.writeDateTime(offsets[10], object.updatedAt);
-  writer.writeString(offsets[11], object.updatedBy);
-  writer.writeString(offsets[12], object.uuid);
+  writer.writeString(offsets[1], object.completedQuartersJson);
+  writer.writeLong(offsets[2], object.currentQuarter);
+  writer.writeDateTime(offsets[3], object.deletedAt);
+  writer.writeStringList(offsets[4], object.presentPlayerIds);
+  writer.writeString(offsets[5], object.quarterLineupsJson);
+  writer.writeString(offsets[6], object.quartersPlayedJson);
+  writer.writeLong(offsets[7], object.quartersTotal);
+  writer.writeLong(offsets[8], object.schemaVersion);
+  writer.writeDateTime(offsets[9], object.startedAt);
+  writer.writeString(offsets[10], object.teamId);
+  writer.writeDateTime(offsets[11], object.updatedAt);
+  writer.writeString(offsets[12], object.updatedBy);
+  writer.writeString(offsets[13], object.uuid);
 }
 
 Game _gameDeserialize(
@@ -172,19 +179,20 @@ Game _gameDeserialize(
 ) {
   final object = Game();
   object.awardsJson = reader.readString(offsets[0]);
-  object.currentQuarter = reader.readLong(offsets[1]);
-  object.deletedAt = reader.readDateTimeOrNull(offsets[2]);
+  object.completedQuartersJson = reader.readString(offsets[1]);
+  object.currentQuarter = reader.readLong(offsets[2]);
+  object.deletedAt = reader.readDateTimeOrNull(offsets[3]);
   object.id = id;
-  object.presentPlayerIds = reader.readStringList(offsets[3]) ?? [];
-  object.quarterLineupsJson = reader.readString(offsets[4]);
-  object.quartersPlayedJson = reader.readString(offsets[5]);
-  object.quartersTotal = reader.readLong(offsets[6]);
-  object.schemaVersion = reader.readLong(offsets[7]);
-  object.startedAt = reader.readDateTime(offsets[8]);
-  object.teamId = reader.readStringOrNull(offsets[9]);
-  object.updatedAt = reader.readDateTime(offsets[10]);
-  object.updatedBy = reader.readStringOrNull(offsets[11]);
-  object.uuid = reader.readString(offsets[12]);
+  object.presentPlayerIds = reader.readStringList(offsets[4]) ?? [];
+  object.quarterLineupsJson = reader.readString(offsets[5]);
+  object.quartersPlayedJson = reader.readString(offsets[6]);
+  object.quartersTotal = reader.readLong(offsets[7]);
+  object.schemaVersion = reader.readLong(offsets[8]);
+  object.startedAt = reader.readDateTime(offsets[9]);
+  object.teamId = reader.readStringOrNull(offsets[10]);
+  object.updatedAt = reader.readDateTime(offsets[11]);
+  object.updatedBy = reader.readStringOrNull(offsets[12]);
+  object.uuid = reader.readString(offsets[13]);
   return object;
 }
 
@@ -198,28 +206,30 @@ P _gameDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readLong(offset)) as P;
-    case 2:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 3:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 4:
       return (reader.readString(offset)) as P;
+    case 2:
+      return (reader.readLong(offset)) as P;
+    case 3:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 4:
+      return (reader.readStringList(offset) ?? []) as P;
     case 5:
       return (reader.readString(offset)) as P;
     case 6:
-      return (reader.readLong(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 7:
       return (reader.readLong(offset)) as P;
     case 8:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 9:
-      return (reader.readStringOrNull(offset)) as P;
-    case 10:
       return (reader.readDateTime(offset)) as P;
-    case 11:
+    case 10:
       return (reader.readStringOrNull(offset)) as P;
+    case 11:
+      return (reader.readDateTime(offset)) as P;
     case 12:
+      return (reader.readStringOrNull(offset)) as P;
+    case 13:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -536,6 +546,140 @@ extension GameQueryFilter on QueryBuilder<Game, Game, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'awardsJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition> completedQuartersJsonEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'completedQuartersJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition>
+      completedQuartersJsonGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'completedQuartersJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition> completedQuartersJsonLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'completedQuartersJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition> completedQuartersJsonBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'completedQuartersJson',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition>
+      completedQuartersJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'completedQuartersJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition> completedQuartersJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'completedQuartersJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition> completedQuartersJsonContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'completedQuartersJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition> completedQuartersJsonMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'completedQuartersJson',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition>
+      completedQuartersJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'completedQuartersJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterFilterCondition>
+      completedQuartersJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'completedQuartersJson',
         value: '',
       ));
     });
@@ -1849,6 +1993,18 @@ extension GameQuerySortBy on QueryBuilder<Game, Game, QSortBy> {
     });
   }
 
+  QueryBuilder<Game, Game, QAfterSortBy> sortByCompletedQuartersJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completedQuartersJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterSortBy> sortByCompletedQuartersJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completedQuartersJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<Game, Game, QAfterSortBy> sortByCurrentQuarter() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'currentQuarter', Sort.asc);
@@ -1992,6 +2148,18 @@ extension GameQuerySortThenBy on QueryBuilder<Game, Game, QSortThenBy> {
   QueryBuilder<Game, Game, QAfterSortBy> thenByAwardsJsonDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'awardsJson', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterSortBy> thenByCompletedQuartersJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completedQuartersJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Game, Game, QAfterSortBy> thenByCompletedQuartersJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'completedQuartersJson', Sort.desc);
     });
   }
 
@@ -2148,6 +2316,14 @@ extension GameQueryWhereDistinct on QueryBuilder<Game, Game, QDistinct> {
     });
   }
 
+  QueryBuilder<Game, Game, QDistinct> distinctByCompletedQuartersJson(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'completedQuartersJson',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Game, Game, QDistinct> distinctByCurrentQuarter() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'currentQuarter');
@@ -2238,6 +2414,12 @@ extension GameQueryProperty on QueryBuilder<Game, Game, QQueryProperty> {
   QueryBuilder<Game, String, QQueryOperations> awardsJsonProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'awardsJson');
+    });
+  }
+
+  QueryBuilder<Game, String, QQueryOperations> completedQuartersJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'completedQuartersJson');
     });
   }
 

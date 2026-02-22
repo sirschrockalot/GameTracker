@@ -32,43 +32,68 @@ const TeamSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'inviteCode': PropertySchema(
+    r'imagePath': PropertySchema(
       id: 3,
+      name: r'imagePath',
+      type: IsarType.string,
+    ),
+    r'inviteCode': PropertySchema(
+      id: 4,
       name: r'inviteCode',
       type: IsarType.string,
     ),
     r'inviteCodeRotatedAt': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'inviteCodeRotatedAt',
       type: IsarType.dateTime,
     ),
+    r'logoKind': PropertySchema(
+      id: 6,
+      name: r'logoKind',
+      type: IsarType.string,
+    ),
+    r'monogramText': PropertySchema(
+      id: 7,
+      name: r'monogramText',
+      type: IsarType.string,
+    ),
     r'name': PropertySchema(
-      id: 5,
+      id: 8,
       name: r'name',
       type: IsarType.string,
     ),
     r'ownerUserId': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
+    r'paletteId': PropertySchema(
+      id: 10,
+      name: r'paletteId',
+      type: IsarType.string,
+    ),
     r'parentCode': PropertySchema(
-      id: 7,
+      id: 11,
       name: r'parentCode',
       type: IsarType.string,
     ),
     r'parentCodeRotatedAt': PropertySchema(
-      id: 8,
+      id: 12,
       name: r'parentCodeRotatedAt',
       type: IsarType.dateTime,
     ),
     r'playerIds': PropertySchema(
-      id: 9,
+      id: 13,
       name: r'playerIds',
       type: IsarType.stringList,
     ),
+    r'templateId': PropertySchema(
+      id: 14,
+      name: r'templateId',
+      type: IsarType.string,
+    ),
     r'uuid': PropertySchema(
-      id: 10,
+      id: 15,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -108,10 +133,34 @@ int _teamEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.coachCode.length * 3;
+  {
+    final value = object.imagePath;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.inviteCode.length * 3;
+  {
+    final value = object.logoKind;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.monogramText;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.name.length * 3;
   {
     final value = object.ownerUserId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.paletteId;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -122,6 +171,12 @@ int _teamEstimateSize(
     for (var i = 0; i < object.playerIds.length; i++) {
       final value = object.playerIds[i];
       bytesCount += value.length * 3;
+    }
+  }
+  {
+    final value = object.templateId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
     }
   }
   bytesCount += 3 + object.uuid.length * 3;
@@ -137,14 +192,19 @@ void _teamSerialize(
   writer.writeString(offsets[0], object.coachCode);
   writer.writeDateTime(offsets[1], object.coachCodeRotatedAt);
   writer.writeDateTime(offsets[2], object.createdAt);
-  writer.writeString(offsets[3], object.inviteCode);
-  writer.writeDateTime(offsets[4], object.inviteCodeRotatedAt);
-  writer.writeString(offsets[5], object.name);
-  writer.writeString(offsets[6], object.ownerUserId);
-  writer.writeString(offsets[7], object.parentCode);
-  writer.writeDateTime(offsets[8], object.parentCodeRotatedAt);
-  writer.writeStringList(offsets[9], object.playerIds);
-  writer.writeString(offsets[10], object.uuid);
+  writer.writeString(offsets[3], object.imagePath);
+  writer.writeString(offsets[4], object.inviteCode);
+  writer.writeDateTime(offsets[5], object.inviteCodeRotatedAt);
+  writer.writeString(offsets[6], object.logoKind);
+  writer.writeString(offsets[7], object.monogramText);
+  writer.writeString(offsets[8], object.name);
+  writer.writeString(offsets[9], object.ownerUserId);
+  writer.writeString(offsets[10], object.paletteId);
+  writer.writeString(offsets[11], object.parentCode);
+  writer.writeDateTime(offsets[12], object.parentCodeRotatedAt);
+  writer.writeStringList(offsets[13], object.playerIds);
+  writer.writeString(offsets[14], object.templateId);
+  writer.writeString(offsets[15], object.uuid);
 }
 
 Team _teamDeserialize(
@@ -158,14 +218,19 @@ Team _teamDeserialize(
   object.coachCodeRotatedAt = reader.readDateTimeOrNull(offsets[1]);
   object.createdAt = reader.readDateTime(offsets[2]);
   object.id = id;
-  object.inviteCode = reader.readString(offsets[3]);
-  object.inviteCodeRotatedAt = reader.readDateTimeOrNull(offsets[4]);
-  object.name = reader.readString(offsets[5]);
-  object.ownerUserId = reader.readStringOrNull(offsets[6]);
-  object.parentCode = reader.readString(offsets[7]);
-  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[8]);
-  object.playerIds = reader.readStringList(offsets[9]) ?? [];
-  object.uuid = reader.readString(offsets[10]);
+  object.imagePath = reader.readStringOrNull(offsets[3]);
+  object.inviteCode = reader.readString(offsets[4]);
+  object.inviteCodeRotatedAt = reader.readDateTimeOrNull(offsets[5]);
+  object.logoKind = reader.readStringOrNull(offsets[6]);
+  object.monogramText = reader.readStringOrNull(offsets[7]);
+  object.name = reader.readString(offsets[8]);
+  object.ownerUserId = reader.readStringOrNull(offsets[9]);
+  object.paletteId = reader.readStringOrNull(offsets[10]);
+  object.parentCode = reader.readString(offsets[11]);
+  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[12]);
+  object.playerIds = reader.readStringList(offsets[13]) ?? [];
+  object.templateId = reader.readStringOrNull(offsets[14]);
+  object.uuid = reader.readString(offsets[15]);
   return object;
 }
 
@@ -183,20 +248,30 @@ P _teamDeserializeProp<P>(
     case 2:
       return (reader.readDateTime(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 4:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 5:
       return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 9:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 10:
+      return (reader.readStringOrNull(offset)) as P;
+    case 11:
+      return (reader.readString(offset)) as P;
+    case 12:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 13:
+      return (reader.readStringList(offset) ?? []) as P;
+    case 14:
+      return (reader.readStringOrNull(offset)) as P;
+    case 15:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -693,6 +768,152 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'imagePath',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'imagePath',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'imagePath',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'imagePath',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'imagePath',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'imagePath',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'imagePath',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'imagePath',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'imagePath',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'imagePath',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'imagePath',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> imagePathIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'imagePath',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterFilterCondition> inviteCodeEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -890,6 +1111,297 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'logoKind',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'logoKind',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'logoKind',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'logoKind',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'logoKind',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'logoKind',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'logoKind',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'logoKind',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindContains(String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'logoKind',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'logoKind',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'logoKind',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> logoKindIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'logoKind',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'monogramText',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'monogramText',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'monogramText',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'monogramText',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'monogramText',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'monogramText',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'monogramText',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'monogramText',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'monogramText',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'monogramText',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'monogramText',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> monogramTextIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'monogramText',
+        value: '',
       ));
     });
   }
@@ -1163,6 +1675,152 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'ownerUserId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'paletteId',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'paletteId',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'paletteId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'paletteId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'paletteId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'paletteId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'paletteId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'paletteId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'paletteId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'paletteId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'paletteId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> paletteIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'paletteId',
         value: '',
       ));
     });
@@ -1583,6 +2241,152 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'templateId',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'templateId',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'templateId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'templateId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'templateId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'templateId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'templateId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'templateId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'templateId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'templateId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'templateId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> templateIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'templateId',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterFilterCondition> uuidEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1753,6 +2557,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortByImagePath() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'imagePath', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByImagePathDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'imagePath', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByInviteCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'inviteCode', Sort.asc);
@@ -1774,6 +2590,30 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
   QueryBuilder<Team, Team, QAfterSortBy> sortByInviteCodeRotatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'inviteCodeRotatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByLogoKind() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'logoKind', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByLogoKindDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'logoKind', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByMonogramText() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'monogramText', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByMonogramTextDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'monogramText', Sort.desc);
     });
   }
 
@@ -1801,6 +2641,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortByPaletteId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paletteId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByPaletteIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paletteId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByParentCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'parentCode', Sort.asc);
@@ -1822,6 +2674,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
   QueryBuilder<Team, Team, QAfterSortBy> sortByParentCodeRotatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'parentCodeRotatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByTemplateId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'templateId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByTemplateIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'templateId', Sort.desc);
     });
   }
 
@@ -1887,6 +2751,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> thenByImagePath() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'imagePath', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByImagePathDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'imagePath', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByInviteCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'inviteCode', Sort.asc);
@@ -1908,6 +2784,30 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
   QueryBuilder<Team, Team, QAfterSortBy> thenByInviteCodeRotatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'inviteCodeRotatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByLogoKind() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'logoKind', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByLogoKindDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'logoKind', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByMonogramText() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'monogramText', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByMonogramTextDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'monogramText', Sort.desc);
     });
   }
 
@@ -1935,6 +2835,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> thenByPaletteId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paletteId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByPaletteIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'paletteId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByParentCode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'parentCode', Sort.asc);
@@ -1956,6 +2868,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
   QueryBuilder<Team, Team, QAfterSortBy> thenByParentCodeRotatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'parentCodeRotatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByTemplateId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'templateId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByTemplateIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'templateId', Sort.desc);
     });
   }
 
@@ -1992,6 +2916,13 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
     });
   }
 
+  QueryBuilder<Team, Team, QDistinct> distinctByImagePath(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'imagePath', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Team, Team, QDistinct> distinctByInviteCode(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2002,6 +2933,20 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
   QueryBuilder<Team, Team, QDistinct> distinctByInviteCodeRotatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'inviteCodeRotatedAt');
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByLogoKind(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'logoKind', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByMonogramText(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'monogramText', caseSensitive: caseSensitive);
     });
   }
 
@@ -2016,6 +2961,13 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'ownerUserId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByPaletteId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'paletteId', caseSensitive: caseSensitive);
     });
   }
 
@@ -2035,6 +2987,13 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
   QueryBuilder<Team, Team, QDistinct> distinctByPlayerIds() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'playerIds');
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByTemplateId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'templateId', caseSensitive: caseSensitive);
     });
   }
 
@@ -2071,6 +3030,12 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
     });
   }
 
+  QueryBuilder<Team, String?, QQueryOperations> imagePathProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'imagePath');
+    });
+  }
+
   QueryBuilder<Team, String, QQueryOperations> inviteCodeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'inviteCode');
@@ -2084,6 +3049,18 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
     });
   }
 
+  QueryBuilder<Team, String?, QQueryOperations> logoKindProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'logoKind');
+    });
+  }
+
+  QueryBuilder<Team, String?, QQueryOperations> monogramTextProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'monogramText');
+    });
+  }
+
   QueryBuilder<Team, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
@@ -2093,6 +3070,12 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
   QueryBuilder<Team, String?, QQueryOperations> ownerUserIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'ownerUserId');
+    });
+  }
+
+  QueryBuilder<Team, String?, QQueryOperations> paletteIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'paletteId');
     });
   }
 
@@ -2112,6 +3095,12 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
   QueryBuilder<Team, List<String>, QQueryOperations> playerIdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'playerIds');
+    });
+  }
+
+  QueryBuilder<Team, String?, QQueryOperations> templateIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'templateId');
     });
   }
 

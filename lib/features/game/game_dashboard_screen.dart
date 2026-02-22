@@ -17,7 +17,9 @@ import '../../providers/players_provider.dart';
 import '../../providers/teams_provider.dart';
 import '../../router/app_router.dart';
 import '../../widgets/app_bottom_nav.dart';
+import '../../widgets/confetti_overlay.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/team_logo_avatar.dart';
 
 class GameDashboardScreen extends ConsumerStatefulWidget {
   const GameDashboardScreen({super.key});
@@ -182,23 +184,29 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                 break;
               }
             }
+            final completedQuarters = game.completedQuarters;
             final allQuartersSet = firstEmptyQuarter == null;
+            final suggestTargetQuarter = firstEmptyQuarter ?? quarterNum;
             final canSuggest = !allQuartersSet &&
                 presentPlayers.length >= AppConstants.playersOnCourt &&
-                firstEmptyQuarter != null;
-            final suggestTargetQuarter = firstEmptyQuarter ?? quarterNum;
-            // Quarters with a saved lineup of 5 are locked (read-only)
+                firstEmptyQuarter != null &&
+                !completedQuarters.contains(suggestTargetQuarter);
+            // Lock indicator on tab: completed quarters (hard lock).
             final lockedQuarterIndices = <int>{
-              for (int q = 1; q <= AppConstants.quartersPerGame; q++)
-                if (lineups[q] != null && (lineups[q]!.length) == AppConstants.playersOnCourt) q - 1
+              for (int q in completedQuarters) q - 1
             };
-            final isCurrentQuarterLocked = lockedQuarterIndices.contains(_selectedQuarter) &&
-                _editingQuarter != quarterNum;
+            final isCurrentQuarterLocked = completedQuarters.contains(quarterNum) ||
+                (lockedQuarterIndices.contains(_selectedQuarter) && _editingQuarter != quarterNum);
             final showConfirmForThisQuarter = !isCurrentQuarterLocked &&
                 onCourt.length == AppConstants.playersOnCourt &&
                 (currentQuarter < quarterNum || _editingQuarter == quarterNum);
-            final showEditForLockedQuarter = lockedQuarterIndices.contains(_selectedQuarter) &&
+            final showEditForLockedQuarter = lineups[quarterNum] != null &&
+                lineups[quarterNum]!.length == AppConstants.playersOnCourt &&
+                !completedQuarters.contains(quarterNum) &&
                 _editingQuarter != quarterNum;
+            final showCompleteQuarter = lineups[quarterNum] != null &&
+                lineups[quarterNum]!.length == AppConstants.playersOnCourt &&
+                !completedQuarters.contains(quarterNum);
             final showAutoFillRemaining = currentQuarter < AppConstants.quartersPerGame &&
                 presentPlayers.length >= AppConstants.playersOnCourt;
 
@@ -396,7 +404,9 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                           ),
                         ),
                         if (suggested != null &&
-                            suggested.length == AppConstants.playersOnCourt) ...[
+                            suggested.length == AppConstants.playersOnCourt &&
+                            suggestedQuarter != null &&
+                            !completedQuarters.contains(suggestedQuarter)) ...[
                           const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
@@ -409,6 +419,23 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                                 ),
                               ),
                               child: const Text('Apply Suggestion'),
+                            ),
+                          ),
+                        ],
+                        if (showCompleteQuarter) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showCompleteQuarterDialog(context, gameUuid, quarterNum),
+                              icon: const Icon(Icons.lock, size: 20),
+                              label: Text('Complete Q$quarterNum'),
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -555,7 +582,7 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
         presentIds.where((id) => !lastLineup.contains(id)).toList();
     final suggestion = suggestLineup(
       presentPlayers: presentPlayers,
-      quartersPlayed: Map.from(game.quartersPlayed),
+      quartersPlayed: Map.from(game.quartersPlayedDerived),
       lastQuarterLineup: lastLineup,
       lastQuarterSitting: lastSitting,
       nextQuarter: forQuarter,
@@ -601,11 +628,6 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
       if (confirm != true || !mounted) return;
     }
     await gameRepo.updateLineupForQuarter(gameUuid, q, suggested);
-    final played = Map<String, int>.from(game.quartersPlayed);
-    for (final uuid in suggested) {
-      played[uuid] = (played[uuid] ?? 0) + 1;
-    }
-    await gameRepo.updateQuartersPlayed(gameUuid, played);
     await gameRepo.updateCurrentQuarter(gameUuid, q);
     _hapticForAction();
     ref.read(suggestedLineupProvider.notifier).state = null;
@@ -632,6 +654,43 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     }
   }
 
+  Future<void> _showCompleteQuarterDialog(
+    BuildContext context,
+    String gameUuid,
+    int quarterNum,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Complete Q$quarterNum?'),
+        content: const Text(
+          'Lock this quarter? No more changes to its lineup.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primaryOrange),
+            child: const Text('Complete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    final isar = await ref.read(isarProvider.future);
+    final ok = await GameRepository(isar).markQuarterCompleted(gameUuid, quarterNum);
+    if (mounted) {
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Q$quarterNum completed')),
+        );
+      }
+    }
+  }
+
   Future<void> _showEndGameDialog(BuildContext context, String gameUuid) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -654,14 +713,20 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
       ),
     );
     if (confirm != true || !context.mounted) return;
-    ref.read(currentGameUuidProvider.notifier).state = null;
-    ref.read(suggestedLineupProvider.notifier).state = null;
-    ref.read(suggestedQuarterProvider.notifier).state = null;
-    ref.read(swapSelectionProvider.notifier).state = null;
-    if (context.mounted) {
-      context.go('/history');
-      context.push('/history/$gameUuid');
-    }
+    if (!context.mounted) return;
+    showConfettiOverlay(
+      context,
+      onComplete: () {
+        ref.read(currentGameUuidProvider.notifier).state = null;
+        ref.read(suggestedLineupProvider.notifier).state = null;
+        ref.read(suggestedQuarterProvider.notifier).state = null;
+        ref.read(swapSelectionProvider.notifier).state = null;
+        if (context.mounted) {
+          context.go('/history');
+          context.push('/history/$gameUuid');
+        }
+      },
+    );
   }
 
   Future<void> _autoFillRemaining(
@@ -673,11 +738,16 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     if (startQ > AppConstants.quartersPerGame) return;
     final presentIds = game.presentPlayerIds.toSet();
     if (presentIds.length < AppConstants.playersOnCourt) return;
+    final completed = game.completedQuarters;
 
-    Map<String, int> quartersPlayed = Map.from(game.quartersPlayed);
+    Map<String, int> quartersPlayed = Map.from(game.quartersPlayedDerived);
     List<String> lastLineup = game.quarterLineups[startQ - 1] ?? [];
     final suggested = <int, List<String>>{};
     for (int q = startQ; q <= AppConstants.quartersPerGame; q++) {
+      if (completed.contains(q)) {
+        lastLineup = game.quarterLineups[q] ?? lastLineup;
+        continue;
+      }
       final lastSitting =
           presentIds.difference(lastLineup.toSet()).toList();
       final suggestion = suggestLineup(
@@ -698,7 +768,9 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     final lineups = game.quarterLineups;
     final existingQuarters = <int>[
       for (int q = startQ; q <= AppConstants.quartersPerGame; q++)
-        if (lineups[q] != null && lineups[q]!.length == AppConstants.playersOnCourt) q
+        if (!completed.contains(q) &&
+            lineups[q] != null &&
+            lineups[q]!.length == AppConstants.playersOnCourt) q
     ];
 
     Map<int, List<String>> toApply;
@@ -792,11 +864,6 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
       if (confirm != true || !mounted) return;
     }
     await gameRepo.updateLineupForQuarter(gameUuid, quarterNum, onCourt);
-    final played = Map<String, int>.from(game.quartersPlayed);
-    for (final uuid in onCourt) {
-      played[uuid] = (played[uuid] ?? 0) + 1;
-    }
-    await gameRepo.updateQuartersPlayed(gameUuid, played);
     await gameRepo.updateCurrentQuarter(gameUuid, quarterNum);
     _hapticForAction();
     setState(() {
@@ -1090,19 +1157,7 @@ class _GameDayTeamCard extends StatelessWidget {
       color: Colors.white,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primaryOrange.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(
-            Icons.groups,
-            color: AppColors.primaryOrange,
-            size: 24,
-          ),
-        ),
+        leading: TeamLogoAvatar(team: team, size: 40),
         title: Text(
           team.name,
           style: const TextStyle(

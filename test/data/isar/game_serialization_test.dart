@@ -68,6 +68,35 @@ void main() {
       });
     });
 
+    group('completedQuarters', () {
+      test('round-trip empty', () {
+        const json = GameSerialization.emptyCompletedQuartersJson;
+        final decoded = GameSerialization.decodeCompletedQuarters(json);
+        expect(decoded, isEmpty);
+        expect(GameSerialization.encodeCompletedQuarters(decoded), json);
+      });
+
+      test('round-trip set of quarter numbers', () {
+        final set = {1, 3, 5};
+        final encoded = GameSerialization.encodeCompletedQuarters(set);
+        final decoded = GameSerialization.decodeCompletedQuarters(encoded);
+        expect(decoded, set);
+      });
+    });
+
+    group('computeQuartersPlayedFromLineups', () {
+      test('editing same quarter twice: counts reflect only latest lineup (no double count)', () {
+        final lineups1 = {1: ['a', 'b', 'c', 'd', 'e']};
+        final counts1 = GameSerialization.computeQuartersPlayedFromLineups(lineups1);
+        expect(counts1, {'a': 1, 'b': 1, 'c': 1, 'd': 1, 'e': 1});
+
+        final lineups2 = {1: ['b', 'c', 'd', 'e', 'f']};
+        final counts2 = GameSerialization.computeQuartersPlayedFromLineups(lineups2);
+        expect(counts2, {'b': 1, 'c': 1, 'd': 1, 'e': 1, 'f': 1});
+        expect(counts2.containsKey('a'), false);
+      });
+    });
+
     group('Game awards getter/setter', () {
       test('round-trip AwardType map', () {
         final game = Game.create(
@@ -76,8 +105,8 @@ void main() {
           presentPlayerIds: [],
         );
         final awards = <AwardType, List<String>>{
-          AwardType.christlike: ['p1', 'p2'],
-          AwardType.hustle: ['p3'],
+          AwardType.christlikeness: ['p1', 'p2'],
+          AwardType.effort: ['p3'],
         };
         game.awards = awards;
         expect(game.awards, awards);

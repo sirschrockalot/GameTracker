@@ -7,6 +7,7 @@ import '../../data/isar/models/schedule_event.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/teams_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
+import '../../widgets/team_logo_avatar.dart';
 
 /// Schedule-only home for active parents. Coach tools and nav are not available.
 class ParentHomeScreen extends ConsumerWidget {
@@ -27,19 +28,23 @@ class ParentHomeScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: TextButton.icon(
-            onPressed: () => context.go('/teams'),
-            icon: const Icon(Icons.arrow_back, size: 22),
-            label: const Text('Back to Teams'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/teams'),
+          color: AppColors.textPrimary,
         ),
-        title: Text('$teamName — Schedule'),
+        title: team != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TeamLogoAvatar(team: team!, size: 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('$teamName — Schedule', overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              )
+            : Text('$teamName — Schedule'),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -95,7 +100,7 @@ class ParentHomeScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 6),
                       child: Text(
-                        material.formatMediumDate(date),
+                        material.formatFullDate(date),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
@@ -104,6 +109,7 @@ class ParentHomeScreen extends ConsumerWidget {
                     ),
                     ...events.map((event) => _ScheduleEventTile(
                           event: event,
+                          dateLabel: material.formatFullDate(DateTime(event.startsAt.year, event.startsAt.month, event.startsAt.day)),
                           timeFormat: material.formatTimeOfDay(
                             TimeOfDay.fromDateTime(event.startsAt),
                           ),
@@ -135,10 +141,12 @@ class ParentHomeScreen extends ConsumerWidget {
 class _ScheduleEventTile extends StatelessWidget {
   const _ScheduleEventTile({
     required this.event,
+    required this.dateLabel,
     required this.timeFormat,
   });
 
   final ScheduleEvent event;
+  final String dateLabel;
   final String timeFormat;
 
   @override
@@ -155,6 +163,15 @@ class _ScheduleEventTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            dateLabel,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

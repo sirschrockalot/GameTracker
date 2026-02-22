@@ -157,17 +157,10 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: TextButton.icon(
-              onPressed: () => context.pop(),
-              icon: const Icon(Icons.arrow_back, size: 22),
-              label: const Text('Back'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-            ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+            color: AppColors.textPrimary,
           ),
           title: const Text('Join team'),
           centerTitle: true,
@@ -192,17 +185,10 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: TextButton.icon(
-            onPressed: () => context.pop(),
-            icon: const Icon(Icons.arrow_back, size: 22),
-            label: const Text('Back'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+          color: AppColors.textPrimary,
         ),
         title: const Text('Join team'),
         centerTitle: true,

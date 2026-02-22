@@ -65,4 +65,18 @@ class GameSerialization {
     if (map.isEmpty) return emptyAwardsJson;
     return jsonEncode(map);
   }
+
+  // --- Completed quarters: List<int> (quarter numbers 1..6 that are locked).
+  static const String emptyCompletedQuartersJson = '[]';
+
+  static Set<int> decodeCompletedQuarters(String json) {
+    if (json.isEmpty || json == '[]') return {};
+    final list = jsonDecode(json) as List<dynamic>;
+    return list.map((e) => e as int).toSet();
+  }
+
+  static String encodeCompletedQuarters(Set<int> set) {
+    if (set.isEmpty) return emptyCompletedQuartersJson;
+    return jsonEncode(set.toList()..sort());
+  }
 }
