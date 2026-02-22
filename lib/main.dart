@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'auth/firebase_init.dart';
 
 /// Set to true to test if the Flutter engine paints at all on device (no router/Isar).
 const bool _kMinimalLaunch = false;
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeFirebase();
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);

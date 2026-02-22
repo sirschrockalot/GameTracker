@@ -13,9 +13,6 @@ class Team {
 
   late String name;
 
-  /// UUIDs of players assigned to this team.
-  late List<String> playerIds;
-
   /// 6–8 char uppercase code (no 0,O,1,I). Lookup by this for "Join Team".
   late String inviteCode;
 
@@ -46,12 +43,20 @@ class Team {
   /// Reserved for future custom upload.
   String? imagePath;
 
+  /// Server/local last update time (sync).
+  late DateTime updatedAt;
+  /// User ID of last updater (sync).
+  String? updatedBy;
+  /// Soft-delete tombstone (optional).
+  DateTime? deletedAt;
+  /// Schema version for migrations.
+  late int schemaVersion;
+
   Team();
 
   Team.create({
     required this.uuid,
     required this.name,
-    List<String>? playerIds,
     String? inviteCode,
     String? coachCode,
     String? parentCode,
@@ -62,10 +67,15 @@ class Team {
     this.paletteId,
     this.monogramText,
     this.imagePath,
-  })  : playerIds = playerIds ?? [],
-        inviteCode = inviteCode ?? TeamCodeGenerator.generate(),
+    DateTime? updatedAt,
+    this.updatedBy,
+    this.deletedAt,
+    int schemaVersion = 1,
+  })  : inviteCode = inviteCode ?? TeamCodeGenerator.generate(),
         coachCode = coachCode ?? TeamCodeGenerator.generate(),
         parentCode = parentCode ?? TeamCodeGenerator.generate(),
         createdAt = createdAt ?? DateTime.now(),
-        logoKind = logoKind;
+        logoKind = logoKind,
+        updatedAt = updatedAt ?? DateTime.now(),
+        schemaVersion = schemaVersion;
 }

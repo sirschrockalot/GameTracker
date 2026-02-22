@@ -2,8 +2,14 @@ import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/team.dart';
 
 /// Phase 2 authorization helpers. Wire UI visibility/enabled to these.
+/// "Active membership" = local [JoinRequestStatus.approved] = API "active" (see [JoinRequestStatusMapping]).
 class TeamAuth {
   TeamAuth._();
+
+  /// True if status represents active membership (API "active"). Use for auth and API mapping.
+  static bool isActiveMembership(JoinRequestStatus status) {
+    return status == JoinRequestStatus.approved;
+  }
 
   /// Can view team: active member (approved) or owner.
   static bool canViewTeam(Team team, String userId, bool isApprovedMember) {

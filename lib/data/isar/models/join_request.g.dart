@@ -32,40 +32,55 @@ const JoinRequestSchema = CollectionSchema(
       name: r'coachName',
       type: IsarType.string,
     ),
-    r'note': PropertySchema(
+    r'deletedAt': PropertySchema(
       id: 3,
+      name: r'deletedAt',
+      type: IsarType.dateTime,
+    ),
+    r'note': PropertySchema(
+      id: 4,
       name: r'note',
       type: IsarType.string,
     ),
     r'requestedAt': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'requestedAt',
       type: IsarType.dateTime,
     ),
     r'role': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'role',
       type: IsarType.byte,
       enumMap: _JoinRequestroleEnumValueMap,
     ),
     r'status': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'status',
       type: IsarType.byte,
       enumMap: _JoinRequeststatusEnumValueMap,
     ),
     r'teamId': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'teamId',
       type: IsarType.string,
     ),
+    r'updatedAt': PropertySchema(
+      id: 9,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
+    ),
+    r'updatedBy': PropertySchema(
+      id: 10,
+      name: r'updatedBy',
+      type: IsarType.string,
+    ),
     r'userId': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'userId',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -118,6 +133,12 @@ int _joinRequestEstimateSize(
     }
   }
   bytesCount += 3 + object.teamId.length * 3;
+  {
+    final value = object.updatedBy;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.userId.length * 3;
   bytesCount += 3 + object.uuid.length * 3;
   return bytesCount;
@@ -132,13 +153,16 @@ void _joinRequestSerialize(
   writer.writeDateTime(offsets[0], object.approvedAt);
   writer.writeString(offsets[1], object.approvedByUserId);
   writer.writeString(offsets[2], object.coachName);
-  writer.writeString(offsets[3], object.note);
-  writer.writeDateTime(offsets[4], object.requestedAt);
-  writer.writeByte(offsets[5], object.role.index);
-  writer.writeByte(offsets[6], object.status.index);
-  writer.writeString(offsets[7], object.teamId);
-  writer.writeString(offsets[8], object.userId);
-  writer.writeString(offsets[9], object.uuid);
+  writer.writeDateTime(offsets[3], object.deletedAt);
+  writer.writeString(offsets[4], object.note);
+  writer.writeDateTime(offsets[5], object.requestedAt);
+  writer.writeByte(offsets[6], object.role.index);
+  writer.writeByte(offsets[7], object.status.index);
+  writer.writeString(offsets[8], object.teamId);
+  writer.writeDateTime(offsets[9], object.updatedAt);
+  writer.writeString(offsets[10], object.updatedBy);
+  writer.writeString(offsets[11], object.userId);
+  writer.writeString(offsets[12], object.uuid);
 }
 
 JoinRequest _joinRequestDeserialize(
@@ -151,18 +175,21 @@ JoinRequest _joinRequestDeserialize(
   object.approvedAt = reader.readDateTimeOrNull(offsets[0]);
   object.approvedByUserId = reader.readStringOrNull(offsets[1]);
   object.coachName = reader.readString(offsets[2]);
+  object.deletedAt = reader.readDateTimeOrNull(offsets[3]);
   object.id = id;
-  object.note = reader.readStringOrNull(offsets[3]);
-  object.requestedAt = reader.readDateTime(offsets[4]);
+  object.note = reader.readStringOrNull(offsets[4]);
+  object.requestedAt = reader.readDateTime(offsets[5]);
   object.role =
-      _JoinRequestroleValueEnumMap[reader.readByteOrNull(offsets[5])] ??
+      _JoinRequestroleValueEnumMap[reader.readByteOrNull(offsets[6])] ??
           TeamMemberRole.owner;
   object.status =
-      _JoinRequeststatusValueEnumMap[reader.readByteOrNull(offsets[6])] ??
+      _JoinRequeststatusValueEnumMap[reader.readByteOrNull(offsets[7])] ??
           JoinRequestStatus.pending;
-  object.teamId = reader.readString(offsets[7]);
-  object.userId = reader.readString(offsets[8]);
-  object.uuid = reader.readString(offsets[9]);
+  object.teamId = reader.readString(offsets[8]);
+  object.updatedAt = reader.readDateTime(offsets[9]);
+  object.updatedBy = reader.readStringOrNull(offsets[10]);
+  object.userId = reader.readString(offsets[11]);
+  object.uuid = reader.readString(offsets[12]);
   return object;
 }
 
@@ -180,20 +207,26 @@ P _joinRequestDeserializeProp<P>(
     case 2:
       return (reader.readString(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 4:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
+      return (reader.readDateTime(offset)) as P;
+    case 6:
       return (_JoinRequestroleValueEnumMap[reader.readByteOrNull(offset)] ??
           TeamMemberRole.owner) as P;
-    case 6:
+    case 7:
       return (_JoinRequeststatusValueEnumMap[reader.readByteOrNull(offset)] ??
           JoinRequestStatus.pending) as P;
-    case 7:
-      return (reader.readString(offset)) as P;
     case 8:
       return (reader.readString(offset)) as P;
     case 9:
+      return (reader.readDateTime(offset)) as P;
+    case 10:
+      return (reader.readStringOrNull(offset)) as P;
+    case 11:
+      return (reader.readString(offset)) as P;
+    case 12:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -780,6 +813,80 @@ extension JoinRequestQueryFilter
     });
   }
 
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      deletedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deletedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      deletedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deletedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      deletedAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      deletedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      deletedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      deletedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deletedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -1278,6 +1385,216 @@ extension JoinRequestQueryFilter
     });
   }
 
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedAtEqualTo(DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'updatedBy',
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'updatedBy',
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedBy',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'updatedBy',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedBy',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition>
+      updatedByIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'updatedBy',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<JoinRequest, JoinRequest, QAfterFilterCondition> userIdEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1590,6 +1907,18 @@ extension JoinRequestQuerySortBy
     });
   }
 
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByDeletedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByNote() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'note', Sort.asc);
@@ -1647,6 +1976,30 @@ extension JoinRequestQuerySortBy
   QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByTeamIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'teamId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByUpdatedBy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> sortByUpdatedByDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.desc);
     });
   }
 
@@ -1712,6 +2065,18 @@ extension JoinRequestQuerySortThenBy
   QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByCoachNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'coachName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByDeletedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.desc);
     });
   }
 
@@ -1787,6 +2152,30 @@ extension JoinRequestQuerySortThenBy
     });
   }
 
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByUpdatedBy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByUpdatedByDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.desc);
+    });
+  }
+
   QueryBuilder<JoinRequest, JoinRequest, QAfterSortBy> thenByUserId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'userId', Sort.asc);
@@ -1835,6 +2224,12 @@ extension JoinRequestQueryWhereDistinct
     });
   }
 
+  QueryBuilder<JoinRequest, JoinRequest, QDistinct> distinctByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletedAt');
+    });
+  }
+
   QueryBuilder<JoinRequest, JoinRequest, QDistinct> distinctByNote(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1864,6 +2259,19 @@ extension JoinRequestQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'teamId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<JoinRequest, JoinRequest, QDistinct> distinctByUpdatedBy(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedBy', caseSensitive: caseSensitive);
     });
   }
 
@@ -1909,6 +2317,12 @@ extension JoinRequestQueryProperty
     });
   }
 
+  QueryBuilder<JoinRequest, DateTime?, QQueryOperations> deletedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletedAt');
+    });
+  }
+
   QueryBuilder<JoinRequest, String?, QQueryOperations> noteProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'note');
@@ -1937,6 +2351,18 @@ extension JoinRequestQueryProperty
   QueryBuilder<JoinRequest, String, QQueryOperations> teamIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'teamId');
+    });
+  }
+
+  QueryBuilder<JoinRequest, DateTime, QQueryOperations> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<JoinRequest, String?, QQueryOperations> updatedByProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedBy');
     });
   }
 

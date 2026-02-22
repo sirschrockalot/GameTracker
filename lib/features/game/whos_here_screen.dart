@@ -38,7 +38,7 @@ class _WhosHereScreenState extends ConsumerState<WhosHereScreen> {
   @override
   Widget build(BuildContext context) {
     final teamsAsync = ref.watch(teamsStreamProvider);
-    final playersAsync = ref.watch(playersFutureProvider);
+    final teamPlayersAsync = ref.watch(playersForTeamProvider(widget.teamUuid));
 
     Team? team;
     try {
@@ -73,13 +73,8 @@ class _WhosHereScreenState extends ConsumerState<WhosHereScreen> {
         title: Text('${team!.name} — Who\'s Here?'),
         centerTitle: true,
       ),
-      body: playersAsync.when(
-        data: (allPlayers) {
-          final teamPlayers = team!.playerIds
-              .map((uuid) => allPlayers.where((p) => p.uuid == uuid).firstOrNull)
-              .whereType<Player>()
-              .toList();
-
+      body: teamPlayersAsync.when(
+        data: (teamPlayers) {
           if (teamPlayers.isEmpty) {
             return Column(
               children: [

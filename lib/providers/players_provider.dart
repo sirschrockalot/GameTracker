@@ -16,6 +16,14 @@ final playersFutureProvider = FutureProvider<List<Player>>((ref) async {
   return PlayerRepository(isar).getAll();
 });
 
+/// Players for a given team (by teamId). Authoritative source for "team roster".
+final playersForTeamProvider =
+    StreamProvider.family<List<Player>, String>((ref, teamId) {
+  final isar = ref.watch(isarProvider).valueOrNull;
+  if (isar == null) return Stream.value([]);
+  return PlayerRepository(isar).watchByTeamId(teamId);
+});
+
 Future<List<Player>> getPlayers(WidgetRef ref) async {
   final isar = await ref.read(isarProvider.future);
   return PlayerRepository(isar).getAll();

@@ -52,6 +52,10 @@ ios/.symlinks/
 *.ipa
 *.apk
 
+# Firebase config (contain API keys; do not commit)
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
 # Secrets and local env (do not commit)
 .env
 .env.*

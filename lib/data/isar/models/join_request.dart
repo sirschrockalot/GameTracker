@@ -46,6 +46,13 @@ class JoinRequest {
   DateTime? approvedAt;
   String? approvedByUserId;
 
+  /// Server/local last update time (sync).
+  late DateTime updatedAt;
+  /// User ID of last updater (sync).
+  String? updatedBy;
+  /// Soft-delete tombstone (e.g. revoke).
+  DateTime? deletedAt;
+
   JoinRequest();
 
   JoinRequest.create({
@@ -59,5 +66,9 @@ class JoinRequest {
     DateTime? requestedAt,
     this.approvedAt,
     this.approvedByUserId,
-  }) : requestedAt = requestedAt ?? DateTime.now();
+    DateTime? updatedAt,
+    this.updatedBy,
+    this.deletedAt,
+  })  : requestedAt = requestedAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 }

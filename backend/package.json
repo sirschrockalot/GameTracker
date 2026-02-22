@@ -1,0 +1,20 @@
+{
+  "name": "gametracker-api",
+  "version": "1.0.0",
+  "description": "Phase 1 API: Heroku + MongoDB Atlas + Firebase Auth",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node -r dotenv/config src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "mongoose": "^8.8.0",
+    "firebase-admin": "^12.0.0",
+    "uuid": "^10.0.0",
+    "dotenv": "^16.4.5"
+  }
+}

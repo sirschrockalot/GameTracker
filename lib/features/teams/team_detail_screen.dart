@@ -76,6 +76,8 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       });
     }
 
+    final teamPlayersAsync = team != null ? ref.watch(playersForTeamProvider(team!.uuid)) : const AsyncValue.data([]);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -100,8 +102,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       ),
       body: team == null
           ? const Center(child: Text('Team not found'))
-          : playersAsync.when(
-              data: (allPlayers) {
+          : teamPlayersAsync.when(
+              data: (assignedPlayers) {
+                final players = assignedPlayers as List<Player>;
                 final currentUserId = ref.watch(currentUserIdProvider);
                 final pendingAsync = ref.watch(pendingJoinRequestsProvider(team!.uuid));
                 final approvedAsync = ref.watch(approvedMembersProvider(team!.uuid));
@@ -126,13 +129,14 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                 }
                 return _TeamDetailBody(
                   team: team!,
-                  allPlayers: allPlayers,
+                  assignedPlayers: players,
+                  allPlayersAsync: playersAsync,
                   nameController: _nameController,
                   onSaveName: () => _saveName(ref, team!),
                   onSaveLogo: (kind, templateId, paletteId, monogramText) => _saveLogo(ref, team!, kind, templateId, paletteId, monogramText),
                   onRemovePlayer: (uuid) => _removePlayer(ref, team!, uuid),
                   onEditPlayer: (p) => _showEditPlayer(context, ref, p),
-                  onAddPlayer: () => _showAddPlayerChoice(context, ref, team!, allPlayers),
+                  onAddPlayer: () => _showAddPlayerChoice(context, ref, team!, players),
                   canManage: canManage,
                   pendingRequests: pendingRequests,
                   approvedMembers: approvedMembers,
@@ -155,7 +159,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     if (name.isEmpty) return;
     team.name = name;
     final isar = await ref.read(isarProvider.future);
-    await TeamRepository(isar).update(team);
+    await TeamRepository(isar).update(team, updatedBy: ref.read(currentUserIdProvider));
   }
 
   Future<void> _saveLogo(
@@ -171,24 +175,32 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     team.paletteId = paletteId;
     team.monogramText = monogramText;
     final isar = await ref.read(isarProvider.future);
-    await TeamRepository(isar).update(team);
+    await TeamRepository(isar).update(team, updatedBy: ref.read(currentUserIdProvider));
     ref.invalidate(teamsStreamProvider);
   }
 
   Future<void> _removePlayer(WidgetRef ref, Team team, String playerUuid) async {
-    team.playerIds = team.playerIds.where((id) => id != playerUuid).toList();
     final isar = await ref.read(isarProvider.future);
-    await TeamRepository(isar).update(team);
+    final player = await PlayerRepository(isar).getByUuid(playerUuid);
+    if (player == null) return;
+    player.teamId = null;
+    player.updatedAt = DateTime.now();
+    player.updatedBy = ref.read(currentUserIdProvider);
+    await PlayerRepository(isar).update(player);
+    ref.invalidate(playersForTeamProvider(team.uuid));
+    ref.invalidate(playersFutureProvider);
   }
 
   Future<void> _showAddFromRoster(
     BuildContext context,
     WidgetRef ref,
     Team team,
-    List<Player> allPlayers,
+    List<Player> assignedPlayers,
   ) async {
-    final assigned = team.playerIds.toSet();
-    final available = allPlayers.where((p) => !assigned.contains(p.uuid)).toList();
+    final playersAsync = ref.read(playersFutureProvider);
+    final allPlayers = playersAsync.valueOrNull ?? [];
+    final assignedIds = assignedPlayers.map((p) => p.uuid).toSet();
+    final available = allPlayers.where((p) => p.teamId != team.uuid && !assignedIds.contains(p.uuid)).toList();
     if (available.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -205,9 +217,20 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       builder: (ctx) => _AddPlayersSheet(available: available),
     );
     if (chosen == null || chosen.isEmpty || !context.mounted) return;
-    team.playerIds = List<String>.from(team.playerIds)..addAll(chosen);
     final isar = await ref.read(isarProvider.future);
-    await TeamRepository(isar).update(team);
+    final repo = PlayerRepository(isar);
+    final userId = ref.read(currentUserIdProvider);
+    for (final uuid in chosen) {
+      final p = await repo.getByUuid(uuid);
+      if (p != null) {
+        p.teamId = team.uuid;
+        p.updatedAt = DateTime.now();
+        p.updatedBy = userId;
+        await repo.update(p);
+      }
+    }
+    ref.invalidate(playersForTeamProvider(team.uuid));
+    ref.invalidate(playersFutureProvider);
   }
 
   Future<void> _showAddNewPlayer(
@@ -228,8 +251,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       teamId: team.uuid,
     );
     await PlayerRepository(isar).add(player);
-    team.playerIds = List<String>.from(team.playerIds)..add(player.uuid);
-    await TeamRepository(isar).update(team);
+    ref.invalidate(playersForTeamProvider(team.uuid));
     ref.invalidate(playersFutureProvider);
   }
 
@@ -254,7 +276,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     JoinRequest request,
   ) async {
     final isar = await ref.read(isarProvider.future);
-    await JoinRequestRepository(isar).reject(request.uuid);
+    await JoinRequestRepository(isar).reject(request.uuid, updatedBy: ref.read(currentUserIdProvider));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Request from ${request.coachName} rejected')),
@@ -289,7 +311,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     );
     if (confirm != true || !context.mounted) return;
     final isar = await ref.read(isarProvider.future);
-    await JoinRequestRepository(isar).revoke(member.uuid);
+    await JoinRequestRepository(isar).revoke(member.uuid, updatedBy: ref.read(currentUserIdProvider));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${member.coachName} removed from team')),
@@ -345,7 +367,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     ref.invalidate(playersFutureProvider);
   }
 
-  void _showAddPlayerChoice(BuildContext context, WidgetRef ref, Team team, List<Player> allPlayers) {
+  void _showAddPlayerChoice(BuildContext context, WidgetRef ref, Team team, List<Player> assignedPlayers) {
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -363,7 +385,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               FilledButton.icon(
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  _showAddFromRoster(context, ref, team, allPlayers);
+                  _showAddFromRoster(context, ref, team, assignedPlayers);
                 },
                 icon: const Icon(Icons.person_add),
                 label: const Text('Add from roster'),
@@ -530,7 +552,8 @@ class _AddPlayersSheetState extends State<_AddPlayersSheet> {
 class _TeamDetailBody extends StatelessWidget {
   const _TeamDetailBody({
     required this.team,
-    required this.allPlayers,
+    required this.assignedPlayers,
+    required this.allPlayersAsync,
     required this.nameController,
     required this.onSaveName,
     this.onSaveLogo,
@@ -549,7 +572,8 @@ class _TeamDetailBody extends StatelessWidget {
   });
 
   final Team team;
-  final List<Player> allPlayers;
+  final List<Player> assignedPlayers;
+  final AsyncValue<List<Player>> allPlayersAsync;
   final TextEditingController nameController;
   final VoidCallback onSaveName;
   final void Function(String kind, String? templateId, String? paletteId, String? monogramText)? onSaveLogo;
@@ -568,11 +592,6 @@ class _TeamDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assignedPlayers = team.playerIds
-        .map((uuid) => allPlayers.where((p) => p.uuid == uuid).firstOrNull)
-        .whereType<Player>()
-        .toList();
-
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [

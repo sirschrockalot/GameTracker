@@ -15,6 +15,23 @@ class PlayerRepository {
     return _isar.players.where().sortByCreatedAt().watch(fireImmediately: true);
   }
 
+  /// Players whose teamId matches (excludes soft-deleted if using deletedAt).
+  Future<List<Player>> listByTeamId(String teamId) async {
+    return _isar.players
+        .filter()
+        .teamIdEqualTo(teamId)
+        .sortByCreatedAt()
+        .findAll();
+  }
+
+  Stream<List<Player>> watchByTeamId(String teamId) {
+    return _isar.players
+        .filter()
+        .teamIdEqualTo(teamId)
+        .sortByCreatedAt()
+        .watch(fireImmediately: true);
+  }
+
   Future<Player?> getByUuid(String uuid) async {
     return _isar.players.filter().uuidEqualTo(uuid).findFirst();
   }

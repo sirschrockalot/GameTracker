@@ -32,68 +32,83 @@ const TeamSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'imagePath': PropertySchema(
+    r'deletedAt': PropertySchema(
       id: 3,
+      name: r'deletedAt',
+      type: IsarType.dateTime,
+    ),
+    r'imagePath': PropertySchema(
+      id: 4,
       name: r'imagePath',
       type: IsarType.string,
     ),
     r'inviteCode': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'inviteCode',
       type: IsarType.string,
     ),
     r'inviteCodeRotatedAt': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'inviteCodeRotatedAt',
       type: IsarType.dateTime,
     ),
     r'logoKind': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'logoKind',
       type: IsarType.string,
     ),
     r'monogramText': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'monogramText',
       type: IsarType.string,
     ),
     r'name': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'name',
       type: IsarType.string,
     ),
     r'ownerUserId': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
     r'paletteId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'paletteId',
       type: IsarType.string,
     ),
     r'parentCode': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'parentCode',
       type: IsarType.string,
     ),
     r'parentCodeRotatedAt': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'parentCodeRotatedAt',
       type: IsarType.dateTime,
     ),
-    r'playerIds': PropertySchema(
-      id: 13,
-      name: r'playerIds',
-      type: IsarType.stringList,
+    r'schemaVersion': PropertySchema(
+      id: 14,
+      name: r'schemaVersion',
+      type: IsarType.long,
     ),
     r'templateId': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'templateId',
       type: IsarType.string,
     ),
+    r'updatedAt': PropertySchema(
+      id: 16,
+      name: r'updatedAt',
+      type: IsarType.dateTime,
+    ),
+    r'updatedBy': PropertySchema(
+      id: 17,
+      name: r'updatedBy',
+      type: IsarType.string,
+    ),
     r'uuid': PropertySchema(
-      id: 15,
+      id: 18,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -166,15 +181,14 @@ int _teamEstimateSize(
     }
   }
   bytesCount += 3 + object.parentCode.length * 3;
-  bytesCount += 3 + object.playerIds.length * 3;
   {
-    for (var i = 0; i < object.playerIds.length; i++) {
-      final value = object.playerIds[i];
-      bytesCount += value.length * 3;
+    final value = object.templateId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
     }
   }
   {
-    final value = object.templateId;
+    final value = object.updatedBy;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -192,19 +206,22 @@ void _teamSerialize(
   writer.writeString(offsets[0], object.coachCode);
   writer.writeDateTime(offsets[1], object.coachCodeRotatedAt);
   writer.writeDateTime(offsets[2], object.createdAt);
-  writer.writeString(offsets[3], object.imagePath);
-  writer.writeString(offsets[4], object.inviteCode);
-  writer.writeDateTime(offsets[5], object.inviteCodeRotatedAt);
-  writer.writeString(offsets[6], object.logoKind);
-  writer.writeString(offsets[7], object.monogramText);
-  writer.writeString(offsets[8], object.name);
-  writer.writeString(offsets[9], object.ownerUserId);
-  writer.writeString(offsets[10], object.paletteId);
-  writer.writeString(offsets[11], object.parentCode);
-  writer.writeDateTime(offsets[12], object.parentCodeRotatedAt);
-  writer.writeStringList(offsets[13], object.playerIds);
-  writer.writeString(offsets[14], object.templateId);
-  writer.writeString(offsets[15], object.uuid);
+  writer.writeDateTime(offsets[3], object.deletedAt);
+  writer.writeString(offsets[4], object.imagePath);
+  writer.writeString(offsets[5], object.inviteCode);
+  writer.writeDateTime(offsets[6], object.inviteCodeRotatedAt);
+  writer.writeString(offsets[7], object.logoKind);
+  writer.writeString(offsets[8], object.monogramText);
+  writer.writeString(offsets[9], object.name);
+  writer.writeString(offsets[10], object.ownerUserId);
+  writer.writeString(offsets[11], object.paletteId);
+  writer.writeString(offsets[12], object.parentCode);
+  writer.writeDateTime(offsets[13], object.parentCodeRotatedAt);
+  writer.writeLong(offsets[14], object.schemaVersion);
+  writer.writeString(offsets[15], object.templateId);
+  writer.writeDateTime(offsets[16], object.updatedAt);
+  writer.writeString(offsets[17], object.updatedBy);
+  writer.writeString(offsets[18], object.uuid);
 }
 
 Team _teamDeserialize(
@@ -217,20 +234,23 @@ Team _teamDeserialize(
   object.coachCode = reader.readString(offsets[0]);
   object.coachCodeRotatedAt = reader.readDateTimeOrNull(offsets[1]);
   object.createdAt = reader.readDateTime(offsets[2]);
+  object.deletedAt = reader.readDateTimeOrNull(offsets[3]);
   object.id = id;
-  object.imagePath = reader.readStringOrNull(offsets[3]);
-  object.inviteCode = reader.readString(offsets[4]);
-  object.inviteCodeRotatedAt = reader.readDateTimeOrNull(offsets[5]);
-  object.logoKind = reader.readStringOrNull(offsets[6]);
-  object.monogramText = reader.readStringOrNull(offsets[7]);
-  object.name = reader.readString(offsets[8]);
-  object.ownerUserId = reader.readStringOrNull(offsets[9]);
-  object.paletteId = reader.readStringOrNull(offsets[10]);
-  object.parentCode = reader.readString(offsets[11]);
-  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[12]);
-  object.playerIds = reader.readStringList(offsets[13]) ?? [];
-  object.templateId = reader.readStringOrNull(offsets[14]);
-  object.uuid = reader.readString(offsets[15]);
+  object.imagePath = reader.readStringOrNull(offsets[4]);
+  object.inviteCode = reader.readString(offsets[5]);
+  object.inviteCodeRotatedAt = reader.readDateTimeOrNull(offsets[6]);
+  object.logoKind = reader.readStringOrNull(offsets[7]);
+  object.monogramText = reader.readStringOrNull(offsets[8]);
+  object.name = reader.readString(offsets[9]);
+  object.ownerUserId = reader.readStringOrNull(offsets[10]);
+  object.paletteId = reader.readStringOrNull(offsets[11]);
+  object.parentCode = reader.readString(offsets[12]);
+  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[13]);
+  object.schemaVersion = reader.readLong(offsets[14]);
+  object.templateId = reader.readStringOrNull(offsets[15]);
+  object.updatedAt = reader.readDateTime(offsets[16]);
+  object.updatedBy = reader.readStringOrNull(offsets[17]);
+  object.uuid = reader.readString(offsets[18]);
   return object;
 }
 
@@ -248,30 +268,36 @@ P _teamDeserializeProp<P>(
     case 2:
       return (reader.readDateTime(offset)) as P;
     case 3:
-      return (reader.readStringOrNull(offset)) as P;
-    case 4:
-      return (reader.readString(offset)) as P;
-    case 5:
       return (reader.readDateTimeOrNull(offset)) as P;
-    case 6:
+    case 4:
       return (reader.readStringOrNull(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 7:
       return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
-    case 9:
       return (reader.readStringOrNull(offset)) as P;
+    case 9:
+      return (reader.readString(offset)) as P;
     case 10:
       return (reader.readStringOrNull(offset)) as P;
     case 11:
-      return (reader.readString(offset)) as P;
-    case 12:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 13:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 14:
       return (reader.readStringOrNull(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 14:
+      return (reader.readLong(offset)) as P;
     case 15:
+      return (reader.readStringOrNull(offset)) as P;
+    case 16:
+      return (reader.readDateTime(offset)) as P;
+    case 17:
+      return (reader.readStringOrNull(offset)) as P;
+    case 18:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -708,6 +734,75 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'createdAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> deletedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deletedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> deletedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deletedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> deletedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> deletedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> deletedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deletedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> deletedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deletedAt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -2027,217 +2122,56 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<Team, Team, QAfterFilterCondition> schemaVersionEqualTo(
+      int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'playerIds',
+        property: r'schemaVersion',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementGreaterThan(
-    String value, {
+  QueryBuilder<Team, Team, QAfterFilterCondition> schemaVersionGreaterThan(
+    int value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'playerIds',
+        property: r'schemaVersion',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementLessThan(
-    String value, {
+  QueryBuilder<Team, Team, QAfterFilterCondition> schemaVersionLessThan(
+    int value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'playerIds',
+        property: r'schemaVersion',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'playerIds',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'playerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'playerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'playerIds',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'playerIds',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'playerIds',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsElementIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'playerIds',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsLengthEqualTo(
-      int length) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'playerIds',
-        length,
-        true,
-        length,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'playerIds',
-        0,
-        true,
-        0,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'playerIds',
-        0,
-        false,
-        999999,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsLengthLessThan(
-    int length, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'playerIds',
-        0,
-        true,
-        length,
-        include,
-      );
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsLengthGreaterThan(
-    int length, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'playerIds',
-        length,
-        include,
-        999999,
-        true,
-      );
-    });
-  }
-
-  QueryBuilder<Team, Team, QAfterFilterCondition> playerIdsLengthBetween(
+  QueryBuilder<Team, Team, QAfterFilterCondition> schemaVersionBetween(
     int lower,
     int upper, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.listLength(
-        r'playerIds',
-        lower,
-        includeLower,
-        upper,
-        includeUpper,
-      );
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'schemaVersion',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
     });
   }
 
@@ -2382,6 +2316,205 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'templateId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedAtEqualTo(
+      DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedAtGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedAtLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedAtBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'updatedBy',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'updatedBy',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedBy',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'updatedBy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'updatedBy',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedBy',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> updatedByIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'updatedBy',
         value: '',
       ));
     });
@@ -2557,6 +2690,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByDeletedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByImagePath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'imagePath', Sort.asc);
@@ -2677,6 +2822,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortBySchemaVersion() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schemaVersion', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortBySchemaVersionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schemaVersion', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByTemplateId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateId', Sort.asc);
@@ -2686,6 +2843,30 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
   QueryBuilder<Team, Team, QAfterSortBy> sortByTemplateIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByUpdatedBy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByUpdatedByDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.desc);
     });
   }
 
@@ -2736,6 +2917,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
   QueryBuilder<Team, Team, QAfterSortBy> thenByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByDeletedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAt', Sort.desc);
     });
   }
 
@@ -2871,6 +3064,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> thenBySchemaVersion() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schemaVersion', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenBySchemaVersionDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'schemaVersion', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByTemplateId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateId', Sort.asc);
@@ -2880,6 +3085,30 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
   QueryBuilder<Team, Team, QAfterSortBy> thenByTemplateIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByUpdatedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByUpdatedBy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByUpdatedByDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedBy', Sort.desc);
     });
   }
 
@@ -2913,6 +3142,12 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
   QueryBuilder<Team, Team, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByDeletedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletedAt');
     });
   }
 
@@ -2984,9 +3219,9 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
     });
   }
 
-  QueryBuilder<Team, Team, QDistinct> distinctByPlayerIds() {
+  QueryBuilder<Team, Team, QDistinct> distinctBySchemaVersion() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'playerIds');
+      return query.addDistinctBy(r'schemaVersion');
     });
   }
 
@@ -2994,6 +3229,19 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'templateId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByUpdatedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<Team, Team, QDistinct> distinctByUpdatedBy(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedBy', caseSensitive: caseSensitive);
     });
   }
 
@@ -3027,6 +3275,12 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
   QueryBuilder<Team, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<Team, DateTime?, QQueryOperations> deletedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletedAt');
     });
   }
 
@@ -3092,15 +3346,27 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
     });
   }
 
-  QueryBuilder<Team, List<String>, QQueryOperations> playerIdsProperty() {
+  QueryBuilder<Team, int, QQueryOperations> schemaVersionProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'playerIds');
+      return query.addPropertyName(r'schemaVersion');
     });
   }
 
   QueryBuilder<Team, String?, QQueryOperations> templateIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'templateId');
+    });
+  }
+
+  QueryBuilder<Team, DateTime, QQueryOperations> updatedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<Team, String?, QQueryOperations> updatedByProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedBy');
     });
   }
 

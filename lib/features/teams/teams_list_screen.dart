@@ -7,6 +7,7 @@ import '../../core/feature_flags.dart';
 import '../../data/isar/models/team.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../providers/isar_provider.dart';
+import '../../providers/players_provider.dart';
 import '../../providers/teams_provider.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/team_logo_avatar.dart';
@@ -17,6 +18,8 @@ class TeamsListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final teamsAsync = ref.watch(teamsStreamProvider);
+    final playersAsync = ref.watch(playersFutureProvider);
+    final allPlayers = playersAsync.valueOrNull ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -70,7 +73,8 @@ class TeamsListScreen extends ConsumerWidget {
                         );
                       }
                       final team = teams[i];
-                      return _TeamCard(team: team, onDelete: () => _deleteTeam(context, ref, team));
+                      final playerCount = allPlayers.where((p) => p.teamId == team.uuid).length;
+                      return _TeamCard(team: team, playerCount: playerCount, onDelete: () => _deleteTeam(context, ref, team));
                     },
                   );
                 },
@@ -116,9 +120,10 @@ class TeamsListScreen extends ConsumerWidget {
 }
 
 class _TeamCard extends StatelessWidget {
-  const _TeamCard({required this.team, required this.onDelete});
+  const _TeamCard({required this.team, required this.playerCount, required this.onDelete});
 
   final Team team;
+  final int playerCount;
   final VoidCallback onDelete;
 
   @override
@@ -143,7 +148,7 @@ class _TeamCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${team.playerIds.length} players',
+          '$playerCount players',
           style: const TextStyle(
             color: AppColors.textSecondary,
             fontSize: 14,

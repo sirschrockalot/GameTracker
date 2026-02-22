@@ -19,6 +19,7 @@ class JoinRequestRepository {
     }
     request.coachName = coachName;
     request.note = JoinRequestValidators.enforceNoteForPersist(request.note);
+    request.updatedAt = DateTime.now();
     await _isar.writeTxn(() async {
       await _isar.joinRequests.put(request);
     });
@@ -49,24 +50,30 @@ class JoinRequestRepository {
       r.status = JoinRequestStatus.approved;
       r.approvedAt = DateTime.now();
       r.approvedByUserId = approvedByUserId;
+      r.updatedAt = DateTime.now();
+      r.updatedBy = approvedByUserId;
       await _isar.joinRequests.put(r);
     });
   }
 
-  Future<void> reject(String requestUuid) async {
+  Future<void> reject(String requestUuid, {String? updatedBy}) async {
     await _isar.writeTxn(() async {
       final r = await _isar.joinRequests.filter().uuidEqualTo(requestUuid).findFirst();
       if (r == null) return;
       r.status = JoinRequestStatus.rejected;
+      r.updatedAt = DateTime.now();
+      if (updatedBy != null) r.updatedBy = updatedBy;
       await _isar.joinRequests.put(r);
     });
   }
 
-  Future<void> revoke(String requestUuid) async {
+  Future<void> revoke(String requestUuid, {String? updatedBy}) async {
     await _isar.writeTxn(() async {
       final r = await _isar.joinRequests.filter().uuidEqualTo(requestUuid).findFirst();
       if (r == null) return;
       r.status = JoinRequestStatus.revoked;
+      r.updatedAt = DateTime.now();
+      if (updatedBy != null) r.updatedBy = updatedBy;
       await _isar.joinRequests.put(r);
     });
   }

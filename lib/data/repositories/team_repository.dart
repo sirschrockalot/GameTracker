@@ -49,11 +49,12 @@ class TeamRepository {
         if (existing != null) {
           team.id = existing.id;
         }
+        team.updatedAt = DateTime.now();
         await _isar.teams.put(team);
         return team.uuid;
       });
 
-  Future<void> update(Team team) => _isar.writeTxn(() async {
+  Future<void> update(Team team, {String? updatedBy}) => _isar.writeTxn(() async {
         if (team.id == Isar.autoIncrement) {
           final existing = await _isar.teams
               .filter()
@@ -63,6 +64,8 @@ class TeamRepository {
             team.id = existing.id;
           }
         }
+        team.updatedAt = DateTime.now();
+        if (updatedBy != null) team.updatedBy = updatedBy;
         await _isar.teams.put(team);
       });
 

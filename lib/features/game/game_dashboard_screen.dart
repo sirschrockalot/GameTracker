@@ -45,6 +45,7 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
 
     if (gameUuid == null) {
       final teamsAsync = ref.watch(teamsStreamProvider);
+      final allPlayers = ref.watch(playersFutureProvider).valueOrNull ?? [];
       return Scaffold(
         backgroundColor: Colors.transparent,
         body: GlassBackground(
@@ -96,7 +97,8 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
                       itemCount: teams.length,
                       itemBuilder: (context, i) {
                         final team = teams[i];
-                        return _GameDayTeamCard(team: team);
+                        final playerCount = allPlayers.where((p) => p.teamId == team.uuid).length;
+                        return _GameDayTeamCard(team: team, playerCount: playerCount);
                       },
                     );
                   },
@@ -1141,9 +1143,10 @@ class _GamePlayerChip extends StatelessWidget {
 }
 
 class _GameDayTeamCard extends StatelessWidget {
-  const _GameDayTeamCard({required this.team});
+  const _GameDayTeamCard({required this.team, required this.playerCount});
 
   final Team team;
+  final int playerCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1167,7 +1170,7 @@ class _GameDayTeamCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${team.playerIds.length} players',
+          '$playerCount players',
           style: const TextStyle(
             color: AppColors.textSecondary,
             fontSize: 14,

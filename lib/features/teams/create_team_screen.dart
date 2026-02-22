@@ -92,14 +92,24 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     final team = Team.create(
       uuid: const Uuid().v4(),
       name: name,
-      playerIds: List<String>.from(_selectedPlayerIds),
       ownerUserId: ownerUserId,
       logoKind: _logoKind,
       templateId: _templateId,
       paletteId: _paletteId,
       monogramText: _monogramText,
+      updatedBy: ownerUserId,
     );
     await TeamRepository(isar).add(team);
+    final playerRepo = PlayerRepository(isar);
+    for (final playerUuid in _selectedPlayerIds) {
+      final p = await playerRepo.getByUuid(playerUuid);
+      if (p != null) {
+        p.teamId = team.uuid;
+        p.updatedAt = DateTime.now();
+        p.updatedBy = ownerUserId;
+        await playerRepo.update(p);
+      }
+    }
     if (!mounted) return;
     context.pop();
     context.push('/teams/${team.uuid}');
