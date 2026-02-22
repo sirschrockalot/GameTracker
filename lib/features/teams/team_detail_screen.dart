@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../auth/auth_providers.dart';
+import '../../auth/auth_session.dart';
+import '../../auth/bootstrap_api.dart';
+import '../../config/backend_config.dart';
+import '../../data/sync/bootstrap_upsert.dart';
 import '../../core/theme.dart';
 import '../../core/feature_flags.dart';
 import '../../widgets/team_logo_avatar.dart';
@@ -15,6 +19,7 @@ import '../../data/isar/models/team.dart';
 import '../../domain/authorization/team_auth.dart';
 import '../../data/repositories/join_request_repository.dart';
 import '../../data/repositories/player_repository.dart';
+import '../../data/repositories/schedule_repository.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../providers/current_user_provider.dart';
 import '../../providers/join_request_provider.dart';
@@ -191,6 +196,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           onRotateCoachCode: () => _rotateCoachCode(context, ref, team),
           onRotateParentCode: () => _rotateParentCode(context, ref, team),
           onSetDisplayName: () => _showSetDisplayName(context, ref),
+          onEnableSync: (team.syncEnabled == true || !canManage) ? null : () => _confirmAndEnableSync(context, ref, team),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -198,7 +204,63 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     );
   }
 
-  /// One-time migration: set team.ownerUserId to current user so we keep access after Firebase → JWT switch.
+  Future<void> _confirmAndEnableSync(BuildContext context, WidgetRef ref, Team team) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enable Sync'),
+        content: const Text(
+          'Enable Sync for this team? This will upload your roster and schedule to the cloud.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Enable Sync')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await _enableSync(context, ref, team);
+  }
+
+  Future<void> _enableSync(BuildContext context, WidgetRef ref, Team team) async {
+    final baseUrl = ref.read(apiBaseUrlProvider);
+    final state = await AuthSession.registerIfNeeded(baseUrl);
+    if (state?.token == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign in required. Check network and try again.')),
+        );
+      }
+      return;
+    }
+    final isar = await ref.read(isarProvider.future);
+    final players = await PlayerRepository(isar).listByTeamId(team.uuid);
+    final scheduleEvents = await ScheduleRepository(isar).listByTeamId(team.uuid);
+    final client = ref.read(authenticatedHttpClientProvider);
+    try {
+      final cloudTeams = await listCloudTeams(client);
+      if (!cloudTeams.any((t) => t['uuid'] == team.uuid)) {
+        await createCloudTeam(client, team.uuid, team.name);
+      }
+      final response = await bootstrapUpload(client, team.uuid, players, scheduleEvents);
+      await upsertBootstrapResponse(isar, response);
+      team.syncEnabled = true;
+      await TeamRepository(isar).update(team, updatedBy: ref.read(currentUserIdProvider));
+      ref.invalidate(teamsStreamProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sync enabled. Roster and schedule now use the cloud.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Enable sync failed: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _migrateTeamOwnerToCurrentUser(WidgetRef ref, Team team) async {
     final userId = ref.read(currentUserIdProvider);
     if (userId.isEmpty || userId == 'local') return;
@@ -670,9 +732,11 @@ class _TeamDetailBody extends StatelessWidget {
     this.onRotateCoachCode,
     this.onRotateParentCode,
     this.onSetDisplayName,
+    this.onEnableSync,
   });
 
   final VoidCallback? onSetDisplayName;
+  final VoidCallback? onEnableSync;
 
   final Team team;
   final List<Player> assignedPlayers;
@@ -705,6 +769,16 @@ class _TeamDetailBody extends StatelessWidget {
             subtitle: const Text('How you appear to others (e.g. Coach Mike)', style: TextStyle(fontSize: 12)),
             trailing: const Icon(Icons.edit, size: 20, color: AppColors.textSecondary),
             onTap: onSetDisplayName,
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (onEnableSync != null) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Enable Sync', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
+            subtitle: const Text('Upload roster and schedule to the cloud', style: TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.cloud_upload, size: 20, color: AppColors.textSecondary),
+            onTap: onEnableSync,
           ),
           const SizedBox(height: 16),
         ],

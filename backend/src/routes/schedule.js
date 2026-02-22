@@ -1,23 +1,10 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { ScheduleEvent } = require('../models/ScheduleEvent');
-const { canWriteSchedule } = require('../utils/membership');
-const { getActiveTeamIds } = require('../utils/membership');
+const { requireActiveMember, requireCoachOrOwner } = require('../middleware/guards');
+const { validateScheduleDates, validateLocation, validateOpponent, validateScheduleNotes, isString } = require('../utils/validation');
 
 const router = express.Router();
-
-async function requireScheduleWrite(req, res, next) {
-  const { teamId } = req.params;
-  const allowed = await getActiveTeamIds(req.userId);
-  if (!allowed.includes(teamId)) {
-    return res.status(403).json({ error: 'forbidden', message: 'Not a member of this team' });
-  }
-  const canWrite = await canWriteSchedule(teamId, req.userId);
-  if (!canWrite) {
-    return res.status(403).json({ error: 'forbidden', message: 'Coach or owner only' });
-  }
-  next();
-}
 
 function toEventJson(doc) {
   const d = doc.toObject ? doc.toObject() : doc;
@@ -37,12 +24,8 @@ function toEventJson(doc) {
   };
 }
 
-router.get('/:teamId/schedule', async (req, res, next) => {
+router.get('/:teamId/schedule', requireActiveMember, async (req, res, next) => {
   try {
-    const teamIds = await getActiveTeamIds(req.userId);
-    if (!teamIds.includes(req.params.teamId)) {
-      return res.status(403).json({ error: 'forbidden', message: 'Not a member of this team' });
-    }
     const list = await ScheduleEvent.find({
       teamId: req.params.teamId,
       deletedAt: null,
@@ -55,26 +38,34 @@ router.get('/:teamId/schedule', async (req, res, next) => {
   }
 });
 
-router.post('/:teamId/schedule', requireScheduleWrite, async (req, res, next) => {
+router.post('/:teamId/schedule', requireCoachOrOwner, async (req, res, next) => {
   try {
     const { teamId } = req.params;
-    const body = req.body;
-    if (!body.type || !body.startsAt) {
-      return res.status(400).json({ error: 'validation', message: 'type and startsAt are required' });
+    const body = req.body || {};
+    if (!body.type || !['practice', 'game'].includes(body.type)) {
+      return res.status(400).json({ error: 'validation', message: 'type must be practice or game' });
     }
+    const dateResult = validateScheduleDates(body.startsAt, body.endsAt);
+    if (dateResult.error) return res.status(400).json(dateResult);
+    const locResult = validateLocation(body.location);
+    if (locResult.error) return res.status(400).json(locResult);
+    const oppResult = validateOpponent(body.opponent);
+    if (oppResult.error) return res.status(400).json(oppResult);
+    const notesResult = validateScheduleNotes(body.notes);
+    if (notesResult.error) return res.status(400).json(notesResult);
     const now = new Date();
     const event = await ScheduleEvent.create({
-      uuid: body.uuid || uuidv4(),
+      uuid: typeof body.uuid === 'string' ? body.uuid : uuidv4(),
       teamId,
       type: body.type,
-      startsAt: new Date(body.startsAt),
-      endsAt: body.endsAt ? new Date(body.endsAt) : null,
-      location: body.location || null,
-      opponent: body.opponent || null,
-      notes: body.notes || null,
+      startsAt: dateResult.value.startsAt,
+      endsAt: dateResult.value.endsAt,
+      location: locResult.value,
+      opponent: oppResult.value,
+      notes: notesResult.value,
       updatedAt: now,
       updatedBy: req.userId,
-      schemaVersion: body.schemaVersion ?? 1,
+      schemaVersion: typeof body.schemaVersion === 'number' ? body.schemaVersion : 1,
     });
     res.status(201).json(toEventJson(event));
   } catch (e) {
@@ -82,10 +73,10 @@ router.post('/:teamId/schedule', requireScheduleWrite, async (req, res, next) =>
   }
 });
 
-router.put('/:teamId/schedule/:eventId', requireScheduleWrite, async (req, res, next) => {
+router.put('/:teamId/schedule/:eventId', requireCoachOrOwner, async (req, res, next) => {
   try {
     const { teamId, eventId } = req.params;
-    const body = req.body;
+    const body = req.body || {};
     const event = await ScheduleEvent.findOne({
       uuid: eventId,
       teamId,
@@ -95,13 +86,17 @@ router.put('/:teamId/schedule/:eventId', requireScheduleWrite, async (req, res, 
       return res.status(404).json({ error: 'not_found', message: 'Event not found' });
     }
     const now = new Date();
-    if (body.type != null) event.type = body.type;
-    if (body.startsAt != null) event.startsAt = new Date(body.startsAt);
-    if (body.endsAt != null) event.endsAt = body.endsAt ? new Date(body.endsAt) : null;
-    if (body.location !== undefined) event.location = body.location;
-    if (body.opponent !== undefined) event.opponent = body.opponent;
-    if (body.notes !== undefined) event.notes = body.notes;
-    if (body.schemaVersion != null) event.schemaVersion = body.schemaVersion;
+    if (body.type != null) event.type = ['practice', 'game'].includes(body.type) ? body.type : event.type;
+    if (body.startsAt != null || body.endsAt != null) {
+      const dateResult = validateScheduleDates(body.startsAt ?? event.startsAt, body.endsAt ?? event.endsAt);
+      if (dateResult.error) return res.status(400).json(dateResult);
+      event.startsAt = dateResult.value.startsAt;
+      event.endsAt = dateResult.value.endsAt;
+    }
+    if (body.location !== undefined) { const r = validateLocation(body.location); if (!r.error) event.location = r.value; }
+    if (body.opponent !== undefined) { const r = validateOpponent(body.opponent); if (!r.error) event.opponent = r.value; }
+    if (body.notes !== undefined) { const r = validateScheduleNotes(body.notes); if (!r.error) event.notes = r.value; }
+    if (body.schemaVersion != null && typeof body.schemaVersion === 'number') event.schemaVersion = body.schemaVersion;
     event.updatedAt = now;
     event.updatedBy = req.userId;
     await event.save();
@@ -111,7 +106,7 @@ router.put('/:teamId/schedule/:eventId', requireScheduleWrite, async (req, res, 
   }
 });
 
-router.delete('/:teamId/schedule/:eventId', requireScheduleWrite, async (req, res, next) => {
+router.delete('/:teamId/schedule/:eventId', requireCoachOrOwner, async (req, res, next) => {
   try {
     const { teamId, eventId } = req.params;
     const event = await ScheduleEvent.findOne({

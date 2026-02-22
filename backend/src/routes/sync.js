@@ -35,7 +35,9 @@ router.get('/pull', async (req, res, next) => {
 router.post('/push', async (req, res, next) => {
   try {
     const userId = req.userId;
-    const { scheduleEventsUpserts = [], scheduleEventsDeletes = [] } = req.body;
+    const body = req.body || {};
+    const scheduleEventsUpserts = Array.isArray(body.scheduleEventsUpserts) ? body.scheduleEventsUpserts : [];
+    const scheduleEventsDeletes = Array.isArray(body.scheduleEventsDeletes) ? body.scheduleEventsDeletes : [];
     const serverTime = new Date();
 
     for (const item of scheduleEventsUpserts) {

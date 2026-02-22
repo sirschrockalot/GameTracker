@@ -63,3 +63,11 @@ Future<({String userId, String? token, String? displayName})?> ensureRegistered(
     return null;
   }
 }
+
+/// Re-register with current installId and stored displayName (or default). Updates stored token/userId.
+Future<void> forceReRegister(String baseUrl) async {
+  final installId = await getInstallId();
+  final displayName = await getStoredDisplayName();
+  final name = displayName ?? 'Coach${installId.length >= 4 ? installId.substring(installId.length - 4) : installId}';
+  await register(baseUrl, installId, name);
+}

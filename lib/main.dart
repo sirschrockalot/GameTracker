@@ -5,12 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'auth/auth_session.dart';
+import 'config/backend_config.dart';
 
 /// Set to true to test if the Flutter engine paints at all on device (no router/Isar).
 const bool _kMinimalLaunch = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Non-blocking: ensure we have a token at launch; on failure allow local-only.
+  AuthSession.registerIfNeeded(backendBaseUrl).catchError((_) {});
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);

@@ -21,6 +21,21 @@ async function canManageTeam(teamId, userId) {
   return isOwner(teamId, userId);
 }
 
+/** ACTIVE member with role owner, or team.ownerUserId match. For bootstrap. */
+async function canBootstrapTeam(teamId, userId) {
+  const team = await Team.findOne({ uuid: teamId, deletedAt: null }).lean();
+  if (!team) return false;
+  if (team.ownerUserId === userId) return true;
+  const member = await TeamMember.findOne({
+    teamId,
+    userId,
+    status: 'active',
+    role: 'owner',
+    deletedAt: null,
+  }).lean();
+  return !!member;
+}
+
 async function canWriteSchedule(teamId, userId) {
   const member = await TeamMember.findOne({
     teamId,
@@ -32,4 +47,4 @@ async function canWriteSchedule(teamId, userId) {
   return ['owner', 'coach'].includes(member.role);
 }
 
-module.exports = { getActiveTeamIds, isOwner, canManageTeam, canWriteSchedule };
+module.exports = { getActiveTeamIds, isOwner, canManageTeam, canBootstrapTeam, canWriteSchedule };

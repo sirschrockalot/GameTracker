@@ -92,23 +92,28 @@ const TeamSchema = CollectionSchema(
       name: r'schemaVersion',
       type: IsarType.long,
     ),
-    r'templateId': PropertySchema(
+    r'syncEnabled': PropertySchema(
       id: 15,
+      name: r'syncEnabled',
+      type: IsarType.bool,
+    ),
+    r'templateId': PropertySchema(
+      id: 16,
       name: r'templateId',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'updatedBy': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'updatedBy',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -218,10 +223,11 @@ void _teamSerialize(
   writer.writeString(offsets[12], object.parentCode);
   writer.writeDateTime(offsets[13], object.parentCodeRotatedAt);
   writer.writeLong(offsets[14], object.schemaVersion);
-  writer.writeString(offsets[15], object.templateId);
-  writer.writeDateTime(offsets[16], object.updatedAt);
-  writer.writeString(offsets[17], object.updatedBy);
-  writer.writeString(offsets[18], object.uuid);
+  writer.writeBool(offsets[15], object.syncEnabled);
+  writer.writeString(offsets[16], object.templateId);
+  writer.writeDateTime(offsets[17], object.updatedAt);
+  writer.writeString(offsets[18], object.updatedBy);
+  writer.writeString(offsets[19], object.uuid);
 }
 
 Team _teamDeserialize(
@@ -247,10 +253,11 @@ Team _teamDeserialize(
   object.parentCode = reader.readString(offsets[12]);
   object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[13]);
   object.schemaVersion = reader.readLong(offsets[14]);
-  object.templateId = reader.readStringOrNull(offsets[15]);
-  object.updatedAt = reader.readDateTime(offsets[16]);
-  object.updatedBy = reader.readStringOrNull(offsets[17]);
-  object.uuid = reader.readString(offsets[18]);
+  object.syncEnabled = reader.readBool(offsets[15]);
+  object.templateId = reader.readStringOrNull(offsets[16]);
+  object.updatedAt = reader.readDateTime(offsets[17]);
+  object.updatedBy = reader.readStringOrNull(offsets[18]);
+  object.uuid = reader.readString(offsets[19]);
   return object;
 }
 
@@ -292,12 +299,14 @@ P _teamDeserializeProp<P>(
     case 14:
       return (reader.readLong(offset)) as P;
     case 15:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 16:
-      return (reader.readDateTime(offset)) as P;
-    case 17:
       return (reader.readStringOrNull(offset)) as P;
+    case 17:
+      return (reader.readDateTime(offset)) as P;
     case 18:
+      return (reader.readStringOrNull(offset)) as P;
+    case 19:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -2175,6 +2184,16 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterFilterCondition> syncEnabledEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'syncEnabled',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterFilterCondition> templateIdIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2834,6 +2853,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortBySyncEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortBySyncEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncEnabled', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByTemplateId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateId', Sort.asc);
@@ -3076,6 +3107,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> thenBySyncEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenBySyncEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'syncEnabled', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByTemplateId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'templateId', Sort.asc);
@@ -3225,6 +3268,12 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
     });
   }
 
+  QueryBuilder<Team, Team, QDistinct> distinctBySyncEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'syncEnabled');
+    });
+  }
+
   QueryBuilder<Team, Team, QDistinct> distinctByTemplateId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -3349,6 +3398,12 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
   QueryBuilder<Team, int, QQueryOperations> schemaVersionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'schemaVersion');
+    });
+  }
+
+  QueryBuilder<Team, bool, QQueryOperations> syncEnabledProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'syncEnabled');
     });
   }
 

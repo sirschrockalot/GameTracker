@@ -9,6 +9,11 @@ const authRouter = require('./routes/auth');
 const teamsRouter = require('./routes/teams');
 const scheduleRouter = require('./routes/schedule');
 const syncRouter = require('./routes/sync');
+const { User } = require('./models/User');
+const { Team } = require('./models/Team');
+const { TeamMember } = require('./models/TeamMember');
+const { Player } = require('./models/Player');
+const { ScheduleEvent } = require('./models/ScheduleEvent');
 
 const hasMongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 const hasJwt = !!process.env.JWT_SECRET;
@@ -40,6 +45,13 @@ const PORT = process.env.PORT || 3000;
 
 async function start() {
   await connectDb();
+  await Promise.all([
+    User.syncIndexes(),
+    Team.syncIndexes(),
+    TeamMember.syncIndexes(),
+    Player.syncIndexes(),
+    ScheduleEvent.syncIndexes(),
+  ]);
   app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
   });

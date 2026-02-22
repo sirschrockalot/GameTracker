@@ -1,8 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'auth_api.dart';
-import 'device_identity.dart';
+import '../config/backend_config.dart';
 import 'api_client.dart';
+import 'auth_api.dart';
+import 'auth_session.dart';
+import 'device_identity.dart';
+
+/// Backend base URL (no trailing slash). From [backend_config].
+final apiBaseUrlProvider = Provider<String>((ref) => backendBaseUrl);
 
 class AuthState {
   const AuthState({required this.userId, this.token, this.displayName});
@@ -19,7 +24,7 @@ class AuthNotifier extends AsyncNotifier<AuthState?> {
   @override
   Future<AuthState?> build() async {
     final baseUrl = ref.read(apiBaseUrlProvider);
-    final state = await ensureRegistered(baseUrl);
+    final state = await AuthSession.registerIfNeeded(baseUrl);
     if (state != null) {
       return AuthState(userId: state.userId, token: state.token, displayName: state.displayName);
     }
@@ -47,14 +52,15 @@ final currentUserIdProvider = Provider<String>((ref) {
 final authTokenProvider = Provider<Future<String?>>((ref) async {
   final auth = ref.read(authStateProvider).valueOrNull;
   if (auth?.token != null) return auth!.token;
-  return getStoredToken();
+  return AuthSession.getToken();
 });
 
-/// Shared authenticated client. Attaches Bearer JWT to requests.
+/// Shared authenticated client. Bearer JWT, 401 → re-register and retry once.
 final authenticatedHttpClientProvider = Provider<AuthenticatedHttpClient>((ref) {
   final baseUrl = ref.watch(apiBaseUrlProvider);
   return AuthenticatedHttpClient(
     baseUrl: baseUrl,
-    getToken: () => ref.read(authTokenProvider),
+    getToken: AuthSession.getToken,
+    forceReRegister: AuthSession.forceReRegister,
   );
 });

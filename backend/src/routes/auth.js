@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { User } = require('../models/User');
 const { registerLimiter } = require('../middleware/rateLimit');
+const { validateDisplayName } = require('../utils/validation');
 
 const router = express.Router();
 
@@ -11,15 +12,13 @@ const JWT_EXPIRY = '180d';
 
 router.post('/register', registerLimiter, async (req, res, next) => {
   try {
-    const { installId, displayName } = req.body || {};
+    const installId = req.body?.installId;
     if (!installId || typeof installId !== 'string' || !UUID_REGEX.test(installId.trim())) {
       return res.status(400).json({ error: 'validation', message: 'installId must be a valid UUID string' });
     }
-    let name = typeof displayName === 'string' ? displayName.trim() : '';
-    name = name.replace(/[\x00-\x1F\x7F]/g, '');
-    if (name.length < 2 || name.length > 40) {
-      return res.status(400).json({ error: 'validation', message: 'displayName must be 2–40 characters' });
-    }
+    const nameResult = validateDisplayName(req.body);
+    if (nameResult.error) return res.status(400).json(nameResult);
+    const name = nameResult.value;
     const now = new Date();
     let user = await User.findOne({ installId: installId.trim() });
     if (user) {

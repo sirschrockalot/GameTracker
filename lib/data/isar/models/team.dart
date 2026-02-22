@@ -52,6 +52,9 @@ class Team {
   /// Schema version for migrations.
   late int schemaVersion;
 
+  /// True after bootstrap upload; schedule/roster use backend as source for this team.
+  bool syncEnabled = false;
+
   Team();
 
   Team.create({
@@ -71,6 +74,7 @@ class Team {
     this.updatedBy,
     this.deletedAt,
     int schemaVersion = 1,
+    this.syncEnabled = false,
   })  : inviteCode = inviteCode ?? TeamCodeGenerator.generate(),
         coachCode = coachCode ?? TeamCodeGenerator.generate(),
         parentCode = parentCode ?? TeamCodeGenerator.generate(),
