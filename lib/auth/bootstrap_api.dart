@@ -13,22 +13,45 @@ Future<List<Map<String, dynamic>>> listCloudTeams(AuthenticatedHttpClient client
   return list.map((e) => e as Map<String, dynamic>).toList();
 }
 
-/// Create cloud team with same [uuid] and [name]. Returns response body.
+/// Create cloud team with same [uuid], [name], and codes so join-by-code works. Returns response body.
 Future<Map<String, dynamic>> createCloudTeam(
   AuthenticatedHttpClient client,
   String uuid,
-  String name,
-) async {
+  String name, {
+  String? coachCode,
+  String? parentCode,
+}) async {
   final uri = Uri.parse('${client.baseUrl}/teams');
+  final body = <String, dynamic>{'uuid': uuid, 'name': name};
+  if (coachCode != null && coachCode.isNotEmpty) body['coachCode'] = coachCode;
+  if (parentCode != null && parentCode.isNotEmpty) body['parentCode'] = parentCode;
   final res = await client.post(
     uri,
     headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'uuid': uuid, 'name': name}),
+    body: jsonEncode(body),
   );
   if (res.statusCode != 201) {
     throw Exception('Create team failed: ${res.statusCode}');
   }
   return jsonDecode(res.body) as Map<String, dynamic>;
+}
+
+/// PUT /teams/:teamId – update coachCode/parentCode so server matches local (owner only).
+Future<void> updateCloudTeamCodes(
+  AuthenticatedHttpClient client,
+  String teamId,
+  String coachCode,
+  String parentCode,
+) async {
+  final uri = Uri.parse('${client.baseUrl}/teams/$teamId');
+  final res = await client.put(
+    uri,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'coachCode': coachCode, 'parentCode': parentCode}),
+  );
+  if (res.statusCode != 200) {
+    throw Exception('Update team codes failed: ${res.statusCode}');
+  }
 }
 
 /// Upload players and schedule events for bootstrap. Returns { players, scheduleEvents }.

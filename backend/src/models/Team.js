@@ -31,13 +31,17 @@ teamSchema.statics.createWithCodes = async function (body, userId) {
   const existing = await this.find({}, { inviteCode: 1, coachCode: 1, parentCode: 1 }).lean();
   const codes = new Set(existing.flatMap((t) => [t.inviteCode, t.coachCode, t.parentCode]));
   const now = new Date();
+  const normalize = (c) => (typeof c === 'string' && c.trim()) ? c.trim().toUpperCase() : null;
+  const inviteCode = normalize(body.inviteCode);
+  const coachCode = normalize(body.coachCode);
+  const parentCode = normalize(body.parentCode);
   const doc = {
     uuid: body.uuid || uuidv4(),
     name: body.name,
     ownerUserId: userId,
-    inviteCode: generateUniqueCode(codes),
-    coachCode: generateUniqueCode(codes),
-    parentCode: generateUniqueCode(codes),
+    inviteCode: inviteCode && !codes.has(inviteCode) ? inviteCode : generateUniqueCode(codes),
+    coachCode: coachCode && !codes.has(coachCode) ? coachCode : generateUniqueCode(codes),
+    parentCode: parentCode && !codes.has(parentCode) ? parentCode : generateUniqueCode(codes),
     createdAt: now,
     updatedAt: now,
     updatedBy: userId,

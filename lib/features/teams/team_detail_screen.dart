@@ -261,7 +261,15 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     try {
       final cloudTeams = await listCloudTeams(client);
       if (!cloudTeams.any((t) => t['uuid'] == team.uuid)) {
-        await createCloudTeam(client, team.uuid, team.name);
+        await createCloudTeam(
+          client,
+          team.uuid,
+          team.name,
+          coachCode: team.coachCode.isNotEmpty ? team.coachCode : null,
+          parentCode: team.parentCode.isNotEmpty ? team.parentCode : null,
+        );
+      } else if (team.coachCode.isNotEmpty && team.parentCode.isNotEmpty) {
+        await updateCloudTeamCodes(client, team.uuid, team.coachCode, team.parentCode);
       }
       final response = await bootstrapUpload(client, team.uuid, players, scheduleEvents);
       await upsertBootstrapResponse(isar, response);

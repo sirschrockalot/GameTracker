@@ -107,6 +107,42 @@ router.post('/join', joinLimiter, async (req, res, next) => {
   }
 });
 
+router.put('/:teamId', requireOwner, async (req, res, next) => {
+  try {
+    const { teamId } = req.params;
+    const team = await Team.findOne({ uuid: teamId, deletedAt: null });
+    if (!team) return res.status(404).json({ error: 'not_found', message: 'Team not found' });
+    const coachCode = typeof req.body?.coachCode === 'string' && req.body.coachCode.trim()
+      ? normalizeCode(req.body.coachCode)
+      : null;
+    const parentCode = typeof req.body?.parentCode === 'string' && req.body.parentCode.trim()
+      ? normalizeCode(req.body.parentCode)
+      : null;
+    if (coachCode) {
+      const existing = await Team.findOne({ coachCode, deletedAt: null }).lean();
+      if (existing && existing.uuid !== teamId) {
+        return res.status(400).json({ error: 'validation', message: 'coachCode already in use' });
+      }
+      team.coachCode = coachCode;
+      team.coachCodeRotatedAt = new Date();
+    }
+    if (parentCode) {
+      const existing = await Team.findOne({ parentCode, deletedAt: null }).lean();
+      if (existing && existing.uuid !== teamId) {
+        return res.status(400).json({ error: 'validation', message: 'parentCode already in use' });
+      }
+      team.parentCode = parentCode;
+      team.parentCodeRotatedAt = new Date();
+    }
+    team.updatedAt = new Date();
+    team.updatedBy = req.userId;
+    await team.save();
+    res.json(toTeamJson(team));
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.get('/', async (req, res, next) => {
   try {
     const userId = req.userId;

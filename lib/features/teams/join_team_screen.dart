@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../auth/api_client.dart';
 import '../../auth/auth_providers.dart';
+import '../../auth/join_team_api.dart';
 import '../../core/theme.dart';
 import '../../core/feature_flags.dart';
 import '../../data/isar/models/join_request.dart';
@@ -87,7 +89,70 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
         requestedRole = TeamMemberRole.parent;
       }
     }
-    if (team == null || requestedRole == null || !mounted) {
+    final userId = ref.read(currentUserIdProvider);
+    final joinRepo = JoinRequestRepository(isar);
+
+    if (team == null || requestedRole == null) {
+      // Local lookup failed (e.g. other device – team not in this device's Isar). Try backend join.
+      final baseUrl = ref.read(apiBaseUrlProvider);
+      if (baseUrl.isNotEmpty) {
+        try {
+          final client = ref.read(authenticatedHttpClientProvider);
+          final member = await requestJoin(client, code, coachName, note);
+          final teamId = member['teamId'] as String?;
+          final memberUuid = member['uuid'] as String?;
+          final apiRole = member['role'] as String?;
+          final apiStatus = member['status'] as String?;
+          final requestedAtStr = member['requestedAt'] as String?;
+          if (teamId == null || memberUuid == null || apiRole == null || apiStatus == null) {
+            throw ApiException('invalid_response', 'Invalid response from server');
+          }
+          final requestedRoleFromApi = apiRole == 'parent' ? TeamMemberRole.parent : TeamMemberRole.coach;
+          final statusFromApi = apiStatus == 'pending' ? JoinRequestStatus.pending : JoinRequestStatus.approved;
+          final requestedAt = requestedAtStr != null ? DateTime.tryParse(requestedAtStr) : null;
+
+          final minimalTeam = Team.create(
+            uuid: teamId,
+            name: 'Team (pending)',
+          );
+          await teamRepo.add(minimalTeam);
+          final request = JoinRequest.create(
+            uuid: memberUuid,
+            teamId: teamId,
+            userId: userId,
+            coachName: coachName,
+            note: note,
+            role: requestedRoleFromApi,
+            status: statusFromApi,
+            requestedAt: requestedAt,
+          );
+          await joinRepo.add(request);
+          try {
+            await ref.read(authStateProvider.notifier).updateDisplayName(coachName);
+          } catch (_) {}
+          setState(() => _submitting = false);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Request sent. The owner will approve.')),
+          );
+          context.go('/teams');
+          return;
+        } on ApiException catch (e) {
+          setState(() => _submitting = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+          }
+          return;
+        } catch (_) {
+          setState(() => _submitting = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Invalid code. Use the coach or parent code from the team.')),
+            );
+          }
+          return;
+        }
+      }
       setState(() => _submitting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -96,11 +161,9 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
       }
       return;
     }
-    final userId = ref.read(currentUserIdProvider);
-    final joinRepo = JoinRequestRepository(isar);
 
     final blockMessage =
-        await _checkJoinGuards(joinRepo, team, userId, requestedRole);
+        await _checkJoinGuards(joinRepo, team!, userId, requestedRole!);
     if (blockMessage != null) {
       setState(() => _submitting = false);
       if (mounted) {
@@ -111,11 +174,11 @@ class _JoinTeamScreenState extends ConsumerState<JoinTeamScreen> {
 
     final request = JoinRequest.create(
       uuid: const Uuid().v4(),
-      teamId: team.uuid,
+      teamId: team!.uuid,
       userId: userId,
       coachName: coachName,
       note: note,
-      role: requestedRole,
+      role: requestedRole!,
       status: JoinRequestStatus.pending,
     );
     await joinRepo.add(request);
