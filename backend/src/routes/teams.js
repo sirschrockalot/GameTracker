@@ -188,6 +188,38 @@ router.get('/:teamId/members', requireOwner, async (req, res, next) => {
   }
 });
 
+const REMIND_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h
+
+router.post('/:teamId/requests/remind', async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const { teamId } = req.params;
+    const member = await TeamMember.findOne({
+      teamId,
+      userId,
+      status: 'pending',
+      deletedAt: null,
+    });
+    if (!member) {
+      return res.status(404).json({ error: 'not_found', message: 'No pending request for this team' });
+    }
+    const now = new Date();
+    if (member.lastReminderAt && now - member.lastReminderAt < REMIND_COOLDOWN_MS) {
+      return res.status(429).json({
+        error: 'rate_limited',
+        message: 'Please wait before sending another reminder',
+        retryAfterMs: REMIND_COOLDOWN_MS - (now - member.lastReminderAt),
+      });
+    }
+    member.lastReminderAt = now;
+    member.updatedAt = now;
+    await member.save();
+    res.json({ ok: true, message: 'Reminder sent' });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post('/:teamId/requests/:requestId/approve', requireOwner, async (req, res, next) => {
   try {
     const userId = req.userId;
@@ -478,6 +510,7 @@ function toMemberJson(doc) {
     requestedAt: d.requestedAt?.toISOString?.() ?? d.requestedAt,
     approvedAt: d.approvedAt?.toISOString?.() ?? d.approvedAt,
     approvedByUserId: d.approvedByUserId,
+    lastReminderAt: d.lastReminderAt?.toISOString?.() ?? d.lastReminderAt,
     updatedAt: d.updatedAt?.toISOString?.() ?? d.updatedAt,
     updatedBy: d.updatedBy,
     deletedAt: d.deletedAt?.toISOString?.() ?? d.deletedAt,

@@ -13,6 +13,7 @@ const teamMemberSchema = new mongoose.Schema(
     requestedAt: { type: Date, default: () => new Date() },
     approvedAt: { type: Date, default: null },
     approvedByUserId: { type: String, default: null },
+    lastReminderAt: { type: Date, default: null },
     updatedAt: { type: Date, default: () => new Date() },
     updatedBy: { type: String, default: null },
     deletedAt: { type: Date, default: null },
