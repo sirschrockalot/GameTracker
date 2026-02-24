@@ -71,10 +71,8 @@ router.post('/join', joinLimiter, async (req, res, next) => {
       deletedAt: null,
     });
     if (activeMember) {
-      return res.status(409).json({
-        error: 'already_member',
-        message: 'Already an active member of this team',
-      });
+      // Already an active member on server – return the member so the client can restore local state.
+      return res.status(200).json(toMemberJson(activeMember));
     }
     const existingPending = await TeamMember.findOne({
       teamId: team.uuid,
