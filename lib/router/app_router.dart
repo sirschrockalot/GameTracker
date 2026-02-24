@@ -12,6 +12,7 @@ import '../features/teams/create_team_screen.dart';
 import '../features/teams/join_team_screen.dart';
 import '../features/teams/share_team_screen.dart';
 import '../features/teams/scan_qr_screen.dart';
+import '../features/teams/team_access_screen.dart';
 import '../features/parent/parent_home_screen.dart';
 import '../features/game/game_dashboard_screen.dart';
 import '../features/game/whos_here_screen.dart';
@@ -213,6 +214,18 @@ final goRouter = GoRouter(
                   context,
                   state,
                   TeamBlockedScreen(teamUuid: teamUuid),
+                );
+              },
+            ),
+            GoRoute(
+              path: 'access',
+              name: 'teamAccess',
+              pageBuilder: (context, state) {
+                final teamUuid = state.pathParameters['teamUuid'] ?? '';
+                return platformPageRoute(
+                  context,
+                  state,
+                  TeamAccessScreen(teamUuid: teamUuid),
                 );
               },
             ),

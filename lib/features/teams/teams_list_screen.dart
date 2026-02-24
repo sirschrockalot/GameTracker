@@ -9,6 +9,8 @@ import '../../data/repositories/team_repository.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/players_provider.dart';
 import '../../providers/teams_provider.dart';
+import '../../providers/notifications_provider.dart';
+import '../../auth/notifications_api.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/team_logo_avatar.dart';
 
@@ -18,6 +20,36 @@ class TeamsListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final teamsAsync = ref.watch(teamsStreamProvider);
+    final summaryAsync = ref.watch(pendingNotificationsSummaryProvider);
+    ref.watch(notificationsPollerProvider);
+
+    ref.listen<AsyncValue<PendingRequestsSummary>>(
+      pendingNotificationsSummaryProvider,
+      (previous, next) {
+        if (previous == null) return;
+        if (previous is AsyncData && next is AsyncData) {
+          final prevTotal = previous.valueOrNull?.totalPending ?? 0;
+          final nextTotal = next.valueOrNull?.totalPending ?? 0;
+          if (nextTotal > prevTotal && nextTotal > 0) {
+            final contextMounted = context.mounted;
+            if (contextMounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('New join request pending approval'),
+                  action: SnackBarAction(
+                    label: 'Review',
+                    onPressed: () {
+                      // Navigate to teams list; owner can open specific team access from there.
+                      context.go('/teams');
+                    },
+                  ),
+                ),
+              );
+            }
+          }
+        }
+      },
+    );
     final playersAsync = ref.watch(playersFutureProvider);
     final allPlayers = playersAsync.valueOrNull ?? [];
 
@@ -56,6 +88,8 @@ class TeamsListScreen extends ConsumerWidget {
             Expanded(
               child: teamsAsync.when(
                 data: (teams) {
+                  final summary = summaryAsync.valueOrNull;
+                  final pendingMap = summary?.pendingByTeam ?? const {};
                   final showJoin = FeatureFlags.enableMembershipAuthV2;
                   final extraCards = showJoin ? 2 : 1;
                   return ListView.builder(
@@ -74,7 +108,13 @@ class TeamsListScreen extends ConsumerWidget {
                       }
                       final team = teams[i];
                       final playerCount = allPlayers.where((p) => p.teamId == team.uuid).length;
-                      return _TeamCard(team: team, playerCount: playerCount, onDelete: () => _deleteTeam(context, ref, team));
+                      final pendingCount = pendingMap[team.uuid] ?? 0;
+                      return _TeamCard(
+                        team: team,
+                        playerCount: playerCount,
+                        pendingCount: pendingCount,
+                        onDelete: () => _deleteTeam(context, ref, team),
+                      );
                     },
                   );
                 },
@@ -120,10 +160,16 @@ class TeamsListScreen extends ConsumerWidget {
 }
 
 class _TeamCard extends StatelessWidget {
-  const _TeamCard({required this.team, required this.playerCount, required this.onDelete});
+  const _TeamCard({
+    required this.team,
+    required this.playerCount,
+    required this.pendingCount,
+    required this.onDelete,
+  });
 
   final Team team;
   final int playerCount;
+  final int pendingCount;
   final VoidCallback onDelete;
 
   @override
@@ -157,6 +203,23 @@ class _TeamCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (pendingCount > 0)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$pendingCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             IconButton(
               icon: const Icon(Icons.edit_outlined, size: 22),
               color: AppColors.textSecondary,

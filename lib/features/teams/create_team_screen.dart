@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/theme.dart';
+import '../../data/isar/models/join_request.dart';
 import '../../core/team_logo.dart';
 import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
 import '../../widgets/team_logo_picker.dart';
 import '../../data/repositories/player_repository.dart';
+import '../../data/repositories/join_request_repository.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../providers/current_user_provider.dart';
 import '../../providers/isar_provider.dart';
@@ -100,6 +102,21 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       updatedBy: ownerUserId,
     );
     await TeamRepository(isar).add(team);
+
+    // Ensure creator has an active owner membership locally.
+    final joinRepo = JoinRequestRepository(isar);
+    final ownerMembership = JoinRequest.create(
+      uuid: const Uuid().v4(),
+      teamId: team.uuid,
+      userId: ownerUserId,
+      coachName: 'Owner',
+      role: TeamMemberRole.owner,
+      status: JoinRequestStatus.approved,
+    );
+    await joinRepo.add(ownerMembership);
+
+    assert(team.ownerUserId == ownerUserId);
+
     final playerRepo = PlayerRepository(isar);
     for (final playerUuid in _selectedPlayerIds) {
       final p = await playerRepo.getByUuid(playerUuid);

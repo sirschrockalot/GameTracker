@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import '../../auth/auth_providers.dart';
 import '../../auth/auth_session.dart';
 import '../../auth/bootstrap_api.dart';
+import '../../auth/join_team_api.dart';
+import '../../features/teams/team_access_screen.dart';
 import '../../config/backend_config.dart';
 import '../../data/sync/bootstrap_upsert.dart';
 import '../../core/theme.dart';
@@ -139,9 +141,8 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       data: (assignedPlayers) {
         final players = assignedPlayers as List<Player>;
         final currentUserId = ref.watch(currentUserIdProvider);
-        final pendingAsync = ref.watch(pendingJoinRequestsProvider(team.uuid));
+        final pendingRequests = ref.watch(mergedPendingRequestsProvider(team.uuid));
         final approvedAsync = ref.watch(approvedMembersProvider(team.uuid));
-        final pendingRequests = pendingAsync.valueOrNull ?? [];
         final approvedMembers = approvedAsync.valueOrNull ?? [];
         final isApprovedMember = approvedMembers.any((m) => m.userId == currentUserId);
         final canView = TeamAuth.canViewTeam(team, currentUserId, isApprovedMember, installId);
@@ -191,8 +192,8 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           canManage: canManage,
           pendingRequests: pendingRequests,
           approvedMembers: approvedMembers,
-          onApproveRequest: (r) => _approveRequest(context, ref, r),
-          onRejectRequest: (r) => _rejectRequest(context, ref, r),
+          onApproveRequest: (r) => _approveRequest(context, ref, team, r),
+          onRejectRequest: (r) => _rejectRequest(context, ref, team, r),
           onRevokeMember: (r) => _revokeMember(context, ref, r),
           onRotateCode: () => _rotateCode(context, ref, team),
           onRotateCoachCode: () => _rotateCoachCode(context, ref, team),
@@ -404,11 +405,21 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
   Future<void> _approveRequest(
     BuildContext context,
     WidgetRef ref,
-    JoinRequest request,
+    Team team,
+    PendingRequestView request,
   ) async {
-    final isar = await ref.read(isarProvider.future);
     final approvedBy = ref.read(currentUserIdProvider);
-    await JoinRequestRepository(isar).approve(request.uuid, approvedBy);
+    if (team.syncEnabled && ref.read(apiBaseUrlProvider).isNotEmpty) {
+      try {
+        final client = ref.read(authenticatedHttpClientProvider);
+        await approveRequest(client, team.uuid, request.uuid);
+      } catch (_) {}
+    }
+    if (!request.isFromServer) {
+      final isar = await ref.read(isarProvider.future);
+      await JoinRequestRepository(isar).approve(request.uuid, approvedBy);
+    }
+    ref.invalidate(serverPendingRequestsProvider(team.uuid));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${request.coachName} approved')),
@@ -419,10 +430,20 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
   Future<void> _rejectRequest(
     BuildContext context,
     WidgetRef ref,
-    JoinRequest request,
+    Team team,
+    PendingRequestView request,
   ) async {
-    final isar = await ref.read(isarProvider.future);
-    await JoinRequestRepository(isar).reject(request.uuid, updatedBy: ref.read(currentUserIdProvider));
+    if (team.syncEnabled && ref.read(apiBaseUrlProvider).isNotEmpty) {
+      try {
+        final client = ref.read(authenticatedHttpClientProvider);
+        await rejectRequest(client, team.uuid, request.uuid);
+      } catch (_) {}
+    }
+    if (!request.isFromServer) {
+      final isar = await ref.read(isarProvider.future);
+      await JoinRequestRepository(isar).reject(request.uuid, updatedBy: ref.read(currentUserIdProvider));
+    }
+    ref.invalidate(serverPendingRequestsProvider(team.uuid));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Request from ${request.coachName} rejected')),
@@ -781,10 +802,10 @@ class _TeamDetailBody extends StatelessWidget {
   final void Function(Player p) onEditPlayer;
   final VoidCallback onAddPlayer;
   final bool canManage;
-  final List<JoinRequest> pendingRequests;
+  final List<PendingRequestView> pendingRequests;
   final List<JoinRequest> approvedMembers;
-  final void Function(JoinRequest request) onApproveRequest;
-  final void Function(JoinRequest request) onRejectRequest;
+  final void Function(PendingRequestView request) onApproveRequest;
+  final void Function(PendingRequestView request) onRejectRequest;
   final void Function(JoinRequest member) onRevokeMember;
   final VoidCallback? onRotateCode;
   final VoidCallback? onRotateCoachCode;
@@ -839,6 +860,104 @@ class _TeamDetailBody extends StatelessWidget {
             onTap: () => context.push('/teams/share/${team.uuid}'),
           ),
           const SizedBox(height: 16),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Team access', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
+            subtitle: Text(
+              pendingRequests.isNotEmpty
+                  ? 'Manage members and approve ${pendingRequests.length} pending'
+                  : 'Manage coaches and parents',
+              style: const TextStyle(fontSize: 12),
+            ),
+            trailing: const Icon(Icons.people_alt_outlined, size: 20, color: AppColors.textSecondary),
+            onTap: () => context.push('/teams/${team.uuid}/access'),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (FeatureFlags.enableMembershipAuthV2 && canManage && pendingRequests.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.person_add_rounded, size: 18, color: AppColors.primaryOrange),
+              const SizedBox(width: 6),
+              Text(
+                'Pending requests (${pendingRequests.length})',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...pendingRequests.map((r) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.chipInactive),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            r.coachName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_roleRequestedLabel(r.role)} • ${_formatRequestedAt(r.requestedAt)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (r.note != null && r.note!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              r.note!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => onRejectRequest(r),
+                      child: const Text('Reject'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => onApproveRequest(r),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primaryOrange,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                      child: const Text('Approve'),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: 20),
         ],
         const Text(
           'Team name',
@@ -1086,86 +1205,6 @@ class _TeamDetailBody extends StatelessWidget {
                   ],
                 ),
               )),
-        if (FeatureFlags.enableMembershipAuthV2 &&
-            canManage &&
-            pendingRequests.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          const Text(
-            'Pending requests',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...pendingRequests.map((r) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.chipInactive),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            r.coachName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${_roleRequestedLabel(r.role)} • ${_formatRequestedAt(r.requestedAt)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          if (r.note != null && r.note!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              r.note!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontStyle: FontStyle.italic,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => onRejectRequest(r),
-                      child: const Text('Reject'),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () => onApproveRequest(r),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primaryOrange,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                      child: const Text('Approve'),
-                    ),
-                  ],
-                ),
-              )),
-        ],
         if (FeatureFlags.enableMembershipAuthV2 &&
             canManage &&
             approvedMembers.isNotEmpty) ...[

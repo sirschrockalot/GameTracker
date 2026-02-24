@@ -10,6 +10,7 @@ const teamsRouter = require('./routes/teams');
 const scheduleRouter = require('./routes/schedule');
 const gamesRouter = require('./routes/games');
 const syncRouter = require('./routes/sync');
+const notificationsRouter = require('./routes/notifications');
 const { User } = require('./models/User');
 const { Team } = require('./models/Team');
 const { TeamMember } = require('./models/TeamMember');
@@ -39,6 +40,7 @@ app.use('/teams', teamsRouter);
 app.use('/teams', scheduleRouter);
 app.use('/teams', gamesRouter);
 app.use('/sync', syncRouter);
+app.use('/', notificationsRouter);
 
 app.use((req, res, next) => {
   res.status(404).json({ error: 'not_found', message: 'Not found' });

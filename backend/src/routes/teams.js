@@ -173,6 +173,21 @@ router.get('/:teamId/requests', requireOwner, async (req, res, next) => {
   }
 });
 
+router.get('/:teamId/members', requireOwner, async (req, res, next) => {
+  try {
+    const { teamId } = req.params;
+    const list = await TeamMember.find({
+      teamId,
+      deletedAt: null,
+    })
+      .sort({ updatedAt: -1 })
+      .lean();
+    res.json(list.map(toMemberJson));
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post('/:teamId/requests/:requestId/approve', requireOwner, async (req, res, next) => {
   try {
     const userId = req.userId;
