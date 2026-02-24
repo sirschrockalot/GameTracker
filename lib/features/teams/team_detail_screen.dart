@@ -262,6 +262,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     try {
       final cloudTeams = await listCloudTeams(client);
       if (!cloudTeams.any((t) => t['uuid'] == team.uuid)) {
+        // First-time sync: create team in cloud with current codes so join-by-code works.
         await createCloudTeam(
           client,
           team.uuid,
@@ -269,7 +270,8 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
           coachCode: team.coachCode.isNotEmpty ? team.coachCode : null,
           parentCode: team.parentCode.isNotEmpty ? team.parentCode : null,
         );
-      } else if (team.coachCode.isNotEmpty && team.parentCode.isNotEmpty) {
+      } else {
+        // Team already exists in cloud: always push current local codes so codes stay in sync.
         await updateCloudTeamCodes(client, team.uuid, team.coachCode, team.parentCode);
       }
       final response = await bootstrapUpload(client, team.uuid, players, scheduleEvents);
