@@ -7,7 +7,9 @@ import '../data/isar/models/team.dart';
 import '../data/repositories/team_repository.dart';
 import '../data/repositories/join_request_repository.dart';
 import '../data/sync/bootstrap_upsert.dart';
+import '../data/sync/game_sync.dart';
 import 'current_user_provider.dart';
+import 'game_provider.dart';
 import 'isar_provider.dart';
 
 DateTime? _parseDate(dynamic v) {
@@ -168,6 +170,15 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
       // bootstrap download fails (e.g. older backend without this endpoint).
     }
   }
+
+  // Pull game history for all active teams so History tab is up to date for non-owners.
+  try {
+    await pushLocalGamesToServer(client, isar);
+  } catch (_) {}
+  try {
+    await pullGamesIntoIsar(client, isar);
+    ref.invalidate(gamesStreamProvider);
+  } catch (_) {}
 
   ref.read(lastTeamsRefreshTimeProvider.notifier).state = DateTime.now();
 });

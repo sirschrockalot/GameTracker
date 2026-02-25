@@ -24,6 +24,9 @@ Future<void> _pullLatest(WidgetRef ref) async {
   final client = ref.read(authenticatedHttpClientProvider);
   final isar = await ref.read(isarProvider.future);
   try {
+    await pushLocalGamesToServer(client, isar);
+  } catch (_) {}
+  try {
     await pullGamesIntoIsar(client, isar);
     ref.invalidate(gamesStreamProvider);
     if (ref.context.mounted) {
