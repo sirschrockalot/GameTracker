@@ -277,6 +277,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       final response = await bootstrapUpload(client, team.uuid, players, scheduleEvents);
       await upsertBootstrapResponse(isar, response);
       team.syncEnabled = true;
+      team.lastSyncedAt = DateTime.now();
       await TeamRepository(isar).update(team, updatedBy: ref.read(currentUserIdProvider));
       ref.invalidate(teamsStreamProvider);
       if (context.mounted) {
@@ -847,7 +848,10 @@ class _TeamDetailBody extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Resync', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary, fontSize: 12)),
-            subtitle: const Text('Upload roster and schedule to the cloud again', style: TextStyle(fontSize: 12)),
+            subtitle: Text(
+              _resyncSubtitle(team.lastSyncedAt),
+              style: const TextStyle(fontSize: 12),
+            ),
             trailing: const Icon(Icons.sync, size: 20, color: AppColors.textSecondary),
             onTap: onResync,
           ),
@@ -1327,6 +1331,21 @@ class _TeamDetailBody extends StatelessWidget {
     if (diff.inHours > 0) return '${diff.inHours}h ago';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
     return 'Just now';
+  }
+
+  static String _resyncSubtitle(DateTime? lastSyncedAt) {
+    if (lastSyncedAt == null) {
+      return 'Upload roster and schedule to the cloud again';
+    }
+    final diff = DateTime.now().difference(lastSyncedAt);
+    final ago = diff.inDays > 0
+        ? '${diff.inDays}d ago'
+        : diff.inHours > 0
+            ? '${diff.inHours}h ago'
+            : diff.inMinutes > 0
+                ? '${diff.inMinutes}m ago'
+                : 'Just now';
+    return 'Last synced: $ago. Tap to upload again so all users get updates.';
   }
 }
 

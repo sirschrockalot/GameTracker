@@ -52,68 +52,73 @@ const TeamSchema = CollectionSchema(
       name: r'inviteCodeRotatedAt',
       type: IsarType.dateTime,
     ),
-    r'logoKind': PropertySchema(
+    r'lastSyncedAt': PropertySchema(
       id: 7,
+      name: r'lastSyncedAt',
+      type: IsarType.dateTime,
+    ),
+    r'logoKind': PropertySchema(
+      id: 8,
       name: r'logoKind',
       type: IsarType.string,
     ),
     r'monogramText': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'monogramText',
       type: IsarType.string,
     ),
     r'name': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'name',
       type: IsarType.string,
     ),
     r'ownerUserId': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'ownerUserId',
       type: IsarType.string,
     ),
     r'paletteId': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'paletteId',
       type: IsarType.string,
     ),
     r'parentCode': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'parentCode',
       type: IsarType.string,
     ),
     r'parentCodeRotatedAt': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'parentCodeRotatedAt',
       type: IsarType.dateTime,
     ),
     r'schemaVersion': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'schemaVersion',
       type: IsarType.long,
     ),
     r'syncEnabled': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'syncEnabled',
       type: IsarType.bool,
     ),
     r'templateId': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'templateId',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'updatedAt',
       type: IsarType.dateTime,
     ),
     r'updatedBy': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'updatedBy',
       type: IsarType.string,
     ),
     r'uuid': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'uuid',
       type: IsarType.string,
     )
@@ -215,19 +220,20 @@ void _teamSerialize(
   writer.writeString(offsets[4], object.imagePath);
   writer.writeString(offsets[5], object.inviteCode);
   writer.writeDateTime(offsets[6], object.inviteCodeRotatedAt);
-  writer.writeString(offsets[7], object.logoKind);
-  writer.writeString(offsets[8], object.monogramText);
-  writer.writeString(offsets[9], object.name);
-  writer.writeString(offsets[10], object.ownerUserId);
-  writer.writeString(offsets[11], object.paletteId);
-  writer.writeString(offsets[12], object.parentCode);
-  writer.writeDateTime(offsets[13], object.parentCodeRotatedAt);
-  writer.writeLong(offsets[14], object.schemaVersion);
-  writer.writeBool(offsets[15], object.syncEnabled);
-  writer.writeString(offsets[16], object.templateId);
-  writer.writeDateTime(offsets[17], object.updatedAt);
-  writer.writeString(offsets[18], object.updatedBy);
-  writer.writeString(offsets[19], object.uuid);
+  writer.writeDateTime(offsets[7], object.lastSyncedAt);
+  writer.writeString(offsets[8], object.logoKind);
+  writer.writeString(offsets[9], object.monogramText);
+  writer.writeString(offsets[10], object.name);
+  writer.writeString(offsets[11], object.ownerUserId);
+  writer.writeString(offsets[12], object.paletteId);
+  writer.writeString(offsets[13], object.parentCode);
+  writer.writeDateTime(offsets[14], object.parentCodeRotatedAt);
+  writer.writeLong(offsets[15], object.schemaVersion);
+  writer.writeBool(offsets[16], object.syncEnabled);
+  writer.writeString(offsets[17], object.templateId);
+  writer.writeDateTime(offsets[18], object.updatedAt);
+  writer.writeString(offsets[19], object.updatedBy);
+  writer.writeString(offsets[20], object.uuid);
 }
 
 Team _teamDeserialize(
@@ -245,19 +251,20 @@ Team _teamDeserialize(
   object.imagePath = reader.readStringOrNull(offsets[4]);
   object.inviteCode = reader.readString(offsets[5]);
   object.inviteCodeRotatedAt = reader.readDateTimeOrNull(offsets[6]);
-  object.logoKind = reader.readStringOrNull(offsets[7]);
-  object.monogramText = reader.readStringOrNull(offsets[8]);
-  object.name = reader.readString(offsets[9]);
-  object.ownerUserId = reader.readStringOrNull(offsets[10]);
-  object.paletteId = reader.readStringOrNull(offsets[11]);
-  object.parentCode = reader.readString(offsets[12]);
-  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[13]);
-  object.schemaVersion = reader.readLong(offsets[14]);
-  object.syncEnabled = reader.readBool(offsets[15]);
-  object.templateId = reader.readStringOrNull(offsets[16]);
-  object.updatedAt = reader.readDateTime(offsets[17]);
-  object.updatedBy = reader.readStringOrNull(offsets[18]);
-  object.uuid = reader.readString(offsets[19]);
+  object.lastSyncedAt = reader.readDateTimeOrNull(offsets[7]);
+  object.logoKind = reader.readStringOrNull(offsets[8]);
+  object.monogramText = reader.readStringOrNull(offsets[9]);
+  object.name = reader.readString(offsets[10]);
+  object.ownerUserId = reader.readStringOrNull(offsets[11]);
+  object.paletteId = reader.readStringOrNull(offsets[12]);
+  object.parentCode = reader.readString(offsets[13]);
+  object.parentCodeRotatedAt = reader.readDateTimeOrNull(offsets[14]);
+  object.schemaVersion = reader.readLong(offsets[15]);
+  object.syncEnabled = reader.readBool(offsets[16]);
+  object.templateId = reader.readStringOrNull(offsets[17]);
+  object.updatedAt = reader.readDateTime(offsets[18]);
+  object.updatedBy = reader.readStringOrNull(offsets[19]);
+  object.uuid = reader.readString(offsets[20]);
   return object;
 }
 
@@ -283,30 +290,32 @@ P _teamDeserializeProp<P>(
     case 6:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 7:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
-    case 10:
       return (reader.readStringOrNull(offset)) as P;
+    case 10:
+      return (reader.readString(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 13:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 14:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 15:
-      return (reader.readBool(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 16:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 17:
-      return (reader.readDateTime(offset)) as P;
-    case 18:
       return (reader.readStringOrNull(offset)) as P;
+    case 18:
+      return (reader.readDateTime(offset)) as P;
     case 19:
+      return (reader.readStringOrNull(offset)) as P;
+    case 20:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1211,6 +1220,75 @@ extension TeamQueryFilter on QueryBuilder<Team, Team, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'inviteCodeRotatedAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> lastSyncedAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastSyncedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> lastSyncedAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastSyncedAt',
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> lastSyncedAtEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastSyncedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> lastSyncedAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastSyncedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> lastSyncedAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastSyncedAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterFilterCondition> lastSyncedAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastSyncedAt',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -2757,6 +2835,18 @@ extension TeamQuerySortBy on QueryBuilder<Team, Team, QSortBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> sortByLastSyncedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSyncedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> sortByLastSyncedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSyncedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> sortByLogoKind() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'logoKind', Sort.asc);
@@ -3011,6 +3101,18 @@ extension TeamQuerySortThenBy on QueryBuilder<Team, Team, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Team, Team, QAfterSortBy> thenByLastSyncedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSyncedAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Team, Team, QAfterSortBy> thenByLastSyncedAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSyncedAt', Sort.desc);
+    });
+  }
+
   QueryBuilder<Team, Team, QAfterSortBy> thenByLogoKind() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'logoKind', Sort.asc);
@@ -3214,6 +3316,12 @@ extension TeamQueryWhereDistinct on QueryBuilder<Team, Team, QDistinct> {
     });
   }
 
+  QueryBuilder<Team, Team, QDistinct> distinctByLastSyncedAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastSyncedAt');
+    });
+  }
+
   QueryBuilder<Team, Team, QDistinct> distinctByLogoKind(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -3349,6 +3457,12 @@ extension TeamQueryProperty on QueryBuilder<Team, Team, QQueryProperty> {
       inviteCodeRotatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'inviteCodeRotatedAt');
+    });
+  }
+
+  QueryBuilder<Team, DateTime?, QQueryOperations> lastSyncedAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastSyncedAt');
     });
   }
 

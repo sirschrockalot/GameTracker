@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
 import '../auth/join_team_api.dart';
+import '../auth/team_members_api.dart';
 import '../data/isar/models/join_request.dart';
 import '../data/isar/models/team.dart';
 import '../domain/authorization/team_auth.dart';
@@ -30,16 +31,25 @@ class PendingRequestView {
   final bool isFromServer;
 }
 
-/// Pending requests from server (GET /teams/:teamId/requests). Empty when team not synced or API unavailable.
+/// All team members from server (GET /teams/:teamId/members). Used to show active members after approving server-side.
+final serverTeamMembersProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, teamId) async {
+  final baseUrl = ref.read(apiBaseUrlProvider);
+  if (baseUrl.isEmpty) return [];
+  try {
+    final client = ref.read(authenticatedHttpClientProvider);
+    return listTeamMembers(client, teamId);
+  } catch (_) {
+    return [];
+  }
+});
+
+/// Pending requests from server (GET /teams/:teamId/requests) for this team.
+/// The backend enforces owner-only access; non-owners will just get an error which we swallow.
 final serverPendingRequestsProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>((ref, teamId) async {
   final baseUrl = ref.read(apiBaseUrlProvider);
   if (baseUrl.isEmpty) return [];
-  final teams = ref.watch(teamsStreamProvider).valueOrNull ?? [];
-  final team = teams.where((t) => t.uuid == teamId).firstOrNull;
-  final currentUserId = ref.watch(currentUserIdProvider);
-  // Only the owner of a sync-enabled team should fetch pending requests from server.
-  if (team == null || !team.syncEnabled || team.ownerUserId != currentUserId) return [];
   try {
     final client = ref.read(authenticatedHttpClientProvider);
     return listPendingRequests(client, teamId);

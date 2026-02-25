@@ -55,6 +55,9 @@ class Team {
   /// True after bootstrap upload; schedule/roster use backend as source for this team.
   bool syncEnabled = false;
 
+  /// When roster/schedule was last successfully uploaded to the cloud (for Resync row).
+  DateTime? lastSyncedAt;
+
   Team();
 
   Team.create({
@@ -75,6 +78,7 @@ class Team {
     this.deletedAt,
     int schemaVersion = 1,
     this.syncEnabled = false,
+    this.lastSyncedAt,
   })  : inviteCode = inviteCode ?? TeamCodeGenerator.generate(),
         coachCode = coachCode ?? TeamCodeGenerator.generate(),
         parentCode = parentCode ?? TeamCodeGenerator.generate(),

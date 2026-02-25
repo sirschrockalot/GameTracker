@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/auth_providers.dart';
+import '../../auth/join_team_api.dart';
 import '../../auth/team_members_api.dart';
 import '../../core/feature_flags.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/team.dart';
 import '../../data/repositories/join_request_repository.dart';
+import '../../domain/authorization/team_auth.dart';
 import '../../providers/current_user_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/join_request_provider.dart';
@@ -37,7 +39,8 @@ class TeamAccessScreen extends ConsumerWidget {
     }
 
     final currentUserId = ref.watch(currentUserIdProvider);
-    final isOwner = team.ownerUserId == currentUserId;
+    final installId = ref.watch(installIdProvider).valueOrNull;
+    final isOwner = TeamAuth.isOwner(team, currentUserId, installId);
     final isCoachViewOnly = FeatureFlags.enableMembershipAuthV2 && !isOwner;
 
     return Scaffold(
@@ -115,11 +118,33 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final ownersAndCoaches = _localApproved
+    final serverPendingAsync = ref.watch(serverPendingRequestsProvider(widget.team.uuid));
+    final serverPending = serverPendingAsync.valueOrNull ?? [];
+    final serverMembersAsync = ref.watch(serverTeamMembersProvider(widget.team.uuid));
+    final serverActive = (serverMembersAsync.valueOrNull ?? [])
+        .where((m) => m['status'] == 'active')
+        .toList();
+    final localApprovedUserIds = _localApproved.map((m) => m.userId).toSet();
+
+    final localOwnersAndCoaches = _localApproved
         .where((m) => m.role == TeamMemberRole.owner || m.role == TeamMemberRole.coach)
         .toList()
       ..sort((a, b) => a.role.index.compareTo(b.role.index));
-    final parents = _localApproved.where((m) => m.role == TeamMemberRole.parent).toList();
+    final serverCoaches = serverActive
+        .where((m) =>
+            (m['role'] == 'owner' || m['role'] == 'coach') &&
+            !localApprovedUserIds.contains(m['userId'] as String?))
+        .toList();
+
+    final localParents = _localApproved.where((m) => m.role == TeamMemberRole.parent).toList();
+    final serverParents = serverActive
+        .where((m) =>
+            m['role'] == 'parent' &&
+            !localApprovedUserIds.contains(m['userId'] as String?))
+        .toList();
+
+    final ownersAndCoachesEmpty = localOwnersAndCoaches.isEmpty && serverCoaches.isEmpty;
+    final parentsEmpty = localParents.isEmpty && serverParents.isEmpty;
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -136,15 +161,22 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
               ),
             ),
             const SizedBox(height: 8),
-            if (ownersAndCoaches.isEmpty)
+            if (ownersAndCoachesEmpty)
               _EmptySection(text: 'No coaches yet. Share the coach code to invite another coach.')
-            else
-              ...ownersAndCoaches.map((m) => _MemberTile(
+            else ...[
+              ...localOwnersAndCoaches.map((m) => _MemberTile(
                     member: m,
                     isOwner: m.role == TeamMemberRole.owner,
                     canRevoke: widget.isOwner && m.role != TeamMemberRole.owner,
                     onRevoke: () => _revokeMember(context, m),
                   )),
+              ...serverCoaches.map((m) => _ServerMemberTile(
+                    member: m,
+                    onRevoke: widget.isOwner && m['role'] != 'owner'
+                        ? () => _revokeServerMember(context, m)
+                        : null,
+                  )),
+            ],
             const SizedBox(height: 24),
             const Text(
               'Parents',
@@ -155,15 +187,20 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
               ),
             ),
             const SizedBox(height: 8),
-            if (parents.isEmpty)
+            if (parentsEmpty)
               _EmptySection(text: 'No parents yet. Share the parent code to invite parents.')
-            else
-              ...parents.map((m) => _MemberTile(
+            else ...[
+              ...localParents.map((m) => _MemberTile(
                     member: m,
                     isOwner: false,
                     canRevoke: widget.isOwner,
                     onRevoke: () => _revokeMember(context, m),
                   )),
+              ...serverParents.map((m) => _ServerMemberTile(
+                    member: m,
+                    onRevoke: widget.isOwner ? () => _revokeServerMember(context, m) : null,
+                  )),
+            ],
             const SizedBox(height: 24),
             const Text(
               'Pending requests',
@@ -174,14 +211,22 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
               ),
             ),
             const SizedBox(height: 8),
-            if (_localPending.isEmpty)
+            if (_localPending.isEmpty && serverPending.isEmpty)
               _EmptySection(text: 'No pending requests.')
-            else
+            else ...[
+              // Server-backed pending requests for synced teams (owner-only).
+              ...serverPending.map((m) => _ServerPendingTile(
+                    member: m,
+                    onApprove: () => _approveServerRequest(context, m),
+                    onReject: () => _rejectServerRequest(context, m),
+                  )),
+              // Local pending requests (pre-sync or offline teams).
               ..._localPending.map((r) => _PendingTile(
                     request: r,
                     onApprove: () => _approveRequest(context, r),
                     onReject: () => _rejectRequest(context, r),
                   )),
+            ],
           ],
           if (!widget.isOwner && widget.isCoachViewOnly) ...[
             const Text(
@@ -193,20 +238,22 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
               ),
             ),
             const SizedBox(height: 8),
-            if (ownersAndCoaches.isEmpty && parents.isEmpty)
+            if (ownersAndCoachesEmpty && parentsEmpty)
               _EmptySection(text: 'No active members yet.')
             else ...[
-              ...ownersAndCoaches.map((m) => _MemberTile(
+              ...localOwnersAndCoaches.map((m) => _MemberTile(
                     member: m,
                     isOwner: m.role == TeamMemberRole.owner,
                     canRevoke: false,
                   )),
+              ...serverCoaches.map((m) => _ServerMemberTile(member: m, onRevoke: null)),
               const SizedBox(height: 16),
-              ...parents.map((m) => _MemberTile(
+              ...localParents.map((m) => _MemberTile(
                     member: m,
                     isOwner: false,
                     canRevoke: false,
                   )),
+              ...serverParents.map((m) => _ServerMemberTile(member: m, onRevoke: null)),
             ]
           ],
         ],
@@ -268,6 +315,92 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
     }
     await _load();
   }
+
+  Future<void> _approveServerRequest(BuildContext context, Map<String, dynamic> member) async {
+    final requestId = member['uuid'] as String?;
+    if (requestId == null) return;
+    try {
+      final client = ref.read(authenticatedHttpClientProvider);
+      await approveRequest(client, widget.team.uuid, requestId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${member['coachName'] ?? 'Coach'} approved')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Approve failed: $e')),
+        );
+      }
+    }
+    ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+    ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+  }
+
+  Future<void> _rejectServerRequest(BuildContext context, Map<String, dynamic> member) async {
+    final requestId = member['uuid'] as String?;
+    if (requestId == null) return;
+    try {
+      final client = ref.read(authenticatedHttpClientProvider);
+      await rejectRequest(client, widget.team.uuid, requestId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Request from ${member['coachName'] ?? 'coach'} rejected')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Reject failed: $e')),
+        );
+      }
+    }
+    ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+    ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+  }
+
+  Future<void> _revokeServerMember(BuildContext context, Map<String, dynamic> member) async {
+    final memberId = member['uuid'] as String?;
+    if (memberId == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove access?'),
+        content: Text(
+          '${member['coachName'] ?? 'This member'} will lose access to this team.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !context.mounted) return;
+    try {
+      final client = ref.read(authenticatedHttpClientProvider);
+      await revokeMember(client, widget.team.uuid, memberId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${member['coachName'] ?? 'Member'} removed')),
+        );
+      }
+      ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Remove failed: $e')),
+        );
+      }
+    }
+  }
 }
 
 class _MemberTile extends StatelessWidget {
@@ -324,6 +457,69 @@ class _MemberTile extends StatelessWidget {
             ),
           ),
           if (canRevoke && onRevoke != null)
+            TextButton(
+              onPressed: onRevoke,
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Remove'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServerMemberTile extends StatelessWidget {
+  const _ServerMemberTile({
+    required this.member,
+    this.onRevoke,
+  });
+
+  final Map<String, dynamic> member;
+  final VoidCallback? onRevoke;
+
+  @override
+  Widget build(BuildContext context) {
+    final coachName = member['coachName'] as String? ?? 'Unknown';
+    final roleRaw = member['role'] as String? ?? 'coach';
+    final roleLabel = roleRaw == 'owner'
+        ? 'Owner'
+        : roleRaw == 'parent'
+            ? 'Parent'
+            : 'Coach';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.chipInactive),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  coachName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$roleLabel • Active',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onRevoke != null)
             TextButton(
               onPressed: onRevoke,
               style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -412,6 +608,102 @@ class _PendingTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ServerPendingTile extends StatelessWidget {
+  const _ServerPendingTile({
+    required this.member,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final Map<String, dynamic> member;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final coachName = member['coachName'] as String? ?? 'Unknown coach';
+    final roleRaw = member['role'] as String? ?? 'coach';
+    final roleLabel = roleRaw == 'parent' ? 'Parent' : 'Coach';
+    final requestedAt = member['requestedAt'] as String?;
+    final requestedAtText = _formatRequestedAt(requestedAt);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.chipInactive),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  coachName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$roleLabel • $requestedAtText',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (member['note'] is String && (member['note'] as String).isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    member['note'] as String,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onReject,
+            child: const Text('Reject'),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: onApprove,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primaryOrange,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            child: const Text('Approve'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatRequestedAt(String? iso) {
+    if (iso == null) return 'Requested';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return 'Requested';
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
   }
 }
 
