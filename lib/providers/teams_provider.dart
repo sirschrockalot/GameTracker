@@ -4,9 +4,8 @@ import '../auth/auth_providers.dart';
 import '../auth/bootstrap_api.dart';
 import '../data/isar/models/join_request.dart';
 import '../data/isar/models/team.dart';
-import '../data/repositories/join_request_repository.dart';
 import '../data/repositories/team_repository.dart';
-import '../domain/authorization/join_request_status_mapping.dart';
+import '../data/repositories/join_request_repository.dart';
 import 'current_user_provider.dart';
 import 'isar_provider.dart';
 
@@ -104,22 +103,29 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
 
       await isar.teams.put(team);
 
-      // If this user had a pending membership for this team locally but the
-      // server now lists the team, treat membership as active (approved).
-      final pendingMembership =
+      // Ensure there is an active local membership for this user and team
+      // when the server lists the team (handles fresh installs on coach devices).
+      final membership =
           await joinRepo.getEffectiveMembership(uuid, currentUserId);
-      if (pendingMembership != null) {
-        if (pendingMembership.status != JoinRequestStatus.pending) {
-          continue;
-        }
-        pendingMembership.status = JoinRequestStatus.approved;
-        pendingMembership.approvedAt =
-            pendingMembership.approvedAt ?? DateTime.now();
-        pendingMembership.approvedByUserId =
-            pendingMembership.approvedByUserId ?? currentUserId;
-        pendingMembership.updatedAt = DateTime.now();
-        pendingMembership.updatedBy = currentUserId;
-        await isar.joinRequests.put(pendingMembership);
+      if (membership == null) {
+        final jr = JoinRequest.create(
+          uuid: '${uuid}_$currentUserId',
+          teamId: uuid,
+          userId: currentUserId,
+          coachName: 'Coach',
+          role: TeamMemberRole.coach,
+          status: JoinRequestStatus.approved,
+        );
+        await isar.joinRequests.put(jr);
+      } else if (membership.status != JoinRequestStatus.approved) {
+        membership.status = JoinRequestStatus.approved;
+        membership.approvedAt =
+            membership.approvedAt ?? DateTime.now();
+        membership.approvedByUserId =
+            membership.approvedByUserId ?? currentUserId;
+        membership.updatedAt = DateTime.now();
+        membership.updatedBy = currentUserId;
+        await isar.joinRequests.put(membership);
       }
     }
   });

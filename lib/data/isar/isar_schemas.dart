@@ -5,6 +5,7 @@ import 'models/game.dart';
 import 'models/team.dart';
 import 'models/join_request.dart';
 import 'models/schedule_event.dart';
+import 'models/sync_outbox.dart';
 
 /// List of all Isar collections for [Isar.open].
 List<CollectionSchema<dynamic>> get isarSchemas => [
@@ -13,4 +14,5 @@ List<CollectionSchema<dynamic>> get isarSchemas => [
       TeamSchema,
       JoinRequestSchema,
       ScheduleEventSchema,
+  SyncOutboxItemSchema,
     ];
