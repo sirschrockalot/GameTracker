@@ -155,6 +155,21 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// DEBUG: Get full auth token (no truncation). Remove after use.
+// Call from app (e.g. trigger Refresh), then either:
+// - Use Charles/Proxyman to read response body, or
+// - Check Heroku logs for TOKEN_CHUNK lines and paste chunks back together.
+router.get('/debug/token', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.replace(/^Bearer\s+/i, '').trim();
+  const chunkSize = 80;
+  for (let i = 0; i < token.length; i += chunkSize) {
+    console.log('TOKEN_CHUNK', token.slice(i, i + chunkSize));
+  }
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+  res.send(token);
+});
+
 router.get('/:teamId/requests', requireOwner, async (req, res, next) => {
   try {
     const { teamId } = req.params;
@@ -449,15 +464,40 @@ router.post('/:teamId/bootstrap', bootstrapLimiter, requireOwner, async (req, re
 router.get('/:teamId/bootstrap', async (req, res, next) => {
   try {
     const userId = req.userId;
-    const { teamId } = req.params;
+    let { teamId } = req.params;
+    if (typeof teamId === 'string') teamId = teamId.trim();
 
-    const team = await Team.findOne({ uuid: teamId, deletedAt: null }).lean();
+    let team = await Team.findOne({ uuid: teamId, deletedAt: null }).lean();
     if (!team) {
-      return res.status(404).json({ error: 'not_found', message: 'Team not found' });
+      // Case-sensitive mismatch: try case-insensitive (e.g. DB has 60E28A4B-... and URL has 60e28a4b-...)
+      const escaped = teamId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      team = await Team.findOne(
+        { uuid: { $regex: new RegExp(`^${escaped}$`, 'i') }, deletedAt: null }
+      ).lean();
+      if (team) {
+        console.warn('Bootstrap: matched team by case-insensitive uuid', { requested: teamId, actual: team.uuid });
+      }
+    }
+    if (!team) {
+      const anyByUuid = await Team.countDocuments({ uuid: teamId });
+      const anyByUuidCaseInsensitive = await Team.countDocuments({
+        uuid: { $regex: new RegExp(`^${(teamId || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      });
+      console.warn('Bootstrap 404', {
+        teamId,
+        teamIdLength: (teamId || '').length,
+        teamsWithExactUuid: anyByUuid,
+        teamsWithUuidCaseInsensitive: anyByUuidCaseInsensitive,
+      });
+      return res.status(404).json({
+        error: 'not_found',
+        message: 'Team not found',
+        details: process.env.NODE_ENV === 'development' ? { teamId } : undefined,
+      });
     }
 
     const member = await TeamMember.findOne({
-      teamId,
+      teamId: team.uuid,
       userId,
       status: 'active',
       deletedAt: null,
@@ -468,11 +508,11 @@ router.get('/:teamId/bootstrap', async (req, res, next) => {
     }
 
     const now = new Date();
-    const players = await Player.find({ teamId, deletedAt: null })
+    const players = await Player.find({ teamId: team.uuid, deletedAt: null })
       .sort({ createdAt: 1 })
       .limit(BOOTSTRAP_MAX_PLAYERS)
       .lean();
-    const events = await ScheduleEvent.find({ teamId })
+    const events = await ScheduleEvent.find({ teamId: team.uuid })
       .sort({ startsAt: 1 })
       .limit(BOOTSTRAP_MAX_SCHEDULE_EVENTS)
       .lean();
