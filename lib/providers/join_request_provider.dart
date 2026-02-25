@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/auth_providers.dart';
 import '../auth/join_team_api.dart';
 import '../auth/team_members_api.dart';
+import '../core/feature_flags.dart';
 import '../data/isar/models/join_request.dart';
 import '../data/isar/models/team.dart';
-import '../domain/authorization/team_auth.dart';
 import '../data/repositories/join_request_repository.dart';
 import '../data/repositories/team_repository.dart';
-import '../core/feature_flags.dart';
+import '../domain/authorization/join_request_status_mapping.dart';
+import '../domain/authorization/team_auth.dart';
 import 'current_user_provider.dart';
 import 'isar_provider.dart';
 import 'teams_provider.dart';
@@ -31,6 +32,17 @@ class PendingRequestView {
   final bool isFromServer;
 }
 
+DateTime? _parseDate(dynamic v) {
+  if (v == null) return null;
+  if (v is DateTime) return v;
+  final s = v.toString();
+  return DateTime.tryParse(s);
+}
+
+/// Debug: last pending-list fetch count and teamId (server).
+final lastPendingListFetchCountProvider = StateProvider<int>((_) => 0);
+final lastPendingListFetchTeamIdProvider = StateProvider<String?>((_) => null);
+
 /// All team members from server (GET /teams/:teamId/members). Used to show active members after approving server-side.
 final serverTeamMembersProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>((ref, teamId) async {
@@ -50,12 +62,62 @@ final serverPendingRequestsProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>((ref, teamId) async {
   final baseUrl = ref.read(apiBaseUrlProvider);
   if (baseUrl.isEmpty) return [];
-  try {
-    final client = ref.read(authenticatedHttpClientProvider);
-    return listPendingRequests(client, teamId);
-  } catch (_) {
-    return [];
-  }
+  final client = ref.read(authenticatedHttpClientProvider);
+  final list = await listPendingRequests(client, teamId);
+
+  ref.read(lastPendingListFetchCountProvider.notifier).state = list.length;
+  ref.read(lastPendingListFetchTeamIdProvider.notifier).state = teamId;
+
+  // Upsert pending requests into Isar so local views stay in sync with server.
+  final isar = await ref.read(isarProvider.future);
+  final currentUserId = ref.read(currentUserIdProvider);
+  await isar.writeTxn(() async {
+    for (final raw in list) {
+      final data = raw;
+      final uuid = data['uuid'] as String?;
+      final coachName = data['coachName'] as String?;
+      final roleStr = data['role'] as String?;
+      final statusStr = data['status'] as String? ?? JoinRequestStatusMapping.apiPending;
+      if (uuid == null || coachName == null || roleStr == null) continue;
+
+      final existing =
+          await JoinRequestRepository(isar).getByUuid(uuid);
+
+      final request = existing ?? JoinRequest();
+      if (existing != null) {
+        request.id = existing.id;
+      }
+
+      request.uuid = uuid;
+      request.teamId = (data['teamId'] as String?) ?? teamId;
+      request.userId = (data['userId'] as String?) ?? currentUserId;
+      request.coachName = coachName;
+      request.note = data['note'] as String?;
+
+      final role = roleStr == 'parent' ? TeamMemberRole.parent : TeamMemberRole.coach;
+      final mappedStatus =
+          JoinRequestStatusMapping.fromApiString(statusStr) ?? JoinRequestStatus.pending;
+
+      request.role = role;
+      request.status = mappedStatus;
+
+      final requestedAt = _parseDate(data['requestedAt']);
+      final approvedAt = _parseDate(data['approvedAt']);
+      final updatedAt = _parseDate(data['updatedAt']);
+
+      request.requestedAt = requestedAt ?? existing?.requestedAt ?? DateTime.now();
+      request.approvedAt = approvedAt ?? existing?.approvedAt;
+      request.approvedByUserId =
+          (data['approvedByUserId'] as String?) ?? existing?.approvedByUserId;
+      request.updatedAt = updatedAt ?? DateTime.now();
+      request.updatedBy = (data['updatedBy'] as String?) ?? existing?.updatedBy;
+      request.deletedAt = _parseDate(data['deletedAt']) ?? existing?.deletedAt;
+
+      await isar.joinRequests.put(request);
+    }
+  });
+
+  return list;
 });
 
 extension _FirstOrNull<E> on Iterable<E> {

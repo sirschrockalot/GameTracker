@@ -159,6 +159,27 @@ Starts from current repo state. Reference: `lib/` structure, `doc/Backend_Spec_H
 
 ---
 
+## Access flow acceptance checklist
+
+Device A (Owner):
+- Create team
+- Share coach code
+
+Device B (Coach):
+- Join with coach code
+- Sees “Pending” (Team access blocked screen)
+
+Device A:
+- Sees pending in list (backend pulled on Team access / Team detail)
+- Approves request (server + local refreshed)
+
+Device B:
+- On Teams screen, uses Refresh Teams or pull-to-refresh (or app returns to foreground)
+- Team appears in list
+- Tap team → full coach/parent experience is available (no blocked/pending screen)
+
+---
+
 ## Summary
 
 - **Phase 1:** Backend auth + teams + membership API; mobile auth + API client + stubs calling API after local writes; remove Team.playerIds; add Team/JoinRequest updatedAt/updatedBy.

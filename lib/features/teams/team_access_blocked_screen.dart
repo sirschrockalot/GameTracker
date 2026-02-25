@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../data/isar/models/join_request.dart';
 import '../../providers/join_request_provider.dart';
+import '../../providers/teams_provider.dart';
 
 /// Resolves membership status and shows blocked message (rejected/revoked).
 class TeamBlockedScreen extends ConsumerWidget {
@@ -38,7 +39,7 @@ class TeamBlockedScreen extends ConsumerWidget {
 }
 
 /// Shown when user has no access or request is pending/rejected/revoked.
-class TeamAccessBlockedScreen extends StatelessWidget {
+class TeamAccessBlockedScreen extends ConsumerWidget {
   const TeamAccessBlockedScreen({
     super.key,
     required this.teamUuid,
@@ -51,7 +52,7 @@ class TeamAccessBlockedScreen extends StatelessWidget {
   final String? teamName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final (title, message) = _messageFor(status);
     final displayName = teamName ?? 'This team';
 
@@ -97,6 +98,51 @@ class TeamAccessBlockedScreen extends StatelessWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
+              if (status == JoinRequestStatus.pending) ...[
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      await ref.refresh(refreshTeamsFromServerProvider.future);
+                      final membership =
+                          await ref.read(userTeamMembershipProvider(teamUuid).future);
+                      final m = membership.membership;
+                      if (m != null &&
+                          m.status == JoinRequestStatus.approved) {
+                        if (context.mounted) {
+                          context.go('/teams/$teamUuid');
+                        }
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Your request is still pending. Try again later.',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Could not check status: $e'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primaryOrange,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Check status'),
+                ),
+              ],
             ],
           ),
         ),

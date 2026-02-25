@@ -28,6 +28,7 @@ import '../../providers/join_request_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/teams_provider.dart';
 import '../../providers/players_provider.dart';
+import '../../providers/notifications_provider.dart';
 
 extension _FirstOrNull<E> on Iterable<E> {
   E? get firstOrNull {
@@ -423,6 +424,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       await JoinRequestRepository(isar).approve(request.uuid, approvedBy);
     }
     ref.invalidate(serverPendingRequestsProvider(team.uuid));
+    ref.invalidate(pendingNotificationsSummaryProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${request.coachName} approved')),
@@ -447,6 +449,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       await JoinRequestRepository(isar).reject(request.uuid, updatedBy: ref.read(currentUserIdProvider));
     }
     ref.invalidate(serverPendingRequestsProvider(team.uuid));
+    ref.invalidate(pendingNotificationsSummaryProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Request from ${request.coachName} rejected')),

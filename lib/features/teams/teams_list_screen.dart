@@ -1,16 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme.dart';
+import '../../auth/auth_providers.dart';
+import '../../auth/notifications_api.dart';
 import '../../core/feature_flags.dart';
+import '../../core/theme.dart';
 import '../../data/isar/models/team.dart';
 import '../../data/repositories/team_repository.dart';
 import '../../providers/isar_provider.dart';
+import '../../providers/join_request_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/players_provider.dart';
 import '../../providers/teams_provider.dart';
-import '../../providers/notifications_provider.dart';
-import '../../auth/notifications_api.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/team_logo_avatar.dart';
 
@@ -21,6 +24,7 @@ class TeamsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final teamsAsync = ref.watch(teamsStreamProvider);
     final summaryAsync = ref.watch(pendingNotificationsSummaryProvider);
+    final refreshTeamsAsync = ref.watch(refreshTeamsFromServerProvider);
     ref.watch(notificationsPollerProvider);
 
     ref.listen<AsyncValue<PendingRequestsSummary>>(
@@ -84,44 +88,94 @@ class TeamsListScreen extends ConsumerWidget {
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
             ),
+            if (FeatureFlags.enableMembershipAuthV2)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (refreshTeamsAsync.isLoading)
+                      const Text(
+                        'Refreshing from cloud…',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      )
+                    else if (refreshTeamsAsync.hasError)
+                      Flexible(
+                        child: Text(
+                          'Showing offline teams. Refresh to check cloud access.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox.shrink(),
+                    TextButton.icon(
+                      onPressed: () async {
+                        await ref.refresh(refreshTeamsFromServerProvider.future);
+                        await ref.refresh(pendingNotificationsSummaryProvider.future);
+                      },
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Refresh teams'),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 20),
             Expanded(
-              child: teamsAsync.when(
-                data: (teams) {
-                  final summary = summaryAsync.valueOrNull;
-                  final pendingMap = summary?.pendingByTeam ?? const {};
-                  final showJoin = FeatureFlags.enableMembershipAuthV2;
-                  final extraCards = showJoin ? 2 : 1;
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: teams.length + extraCards,
-                    itemBuilder: (context, i) {
-                      if (showJoin && i == teams.length) {
-                        return _JoinTeamCard(
-                          onTap: () => context.push('/teams/join'),
-                        );
-                      }
-                      if (i == teams.length + (showJoin ? 1 : 0)) {
-                        return _AddTeamCard(
-                          onTap: () => context.push('/teams/new'),
-                        );
-                      }
-                      final team = teams[i];
-                      final playerCount = allPlayers.where((p) => p.teamId == team.uuid).length;
-                      final pendingCount = pendingMap[team.uuid] ?? 0;
-                      return _TeamCard(
-                        team: team,
-                        playerCount: playerCount,
-                        pendingCount: pendingCount,
-                        onDelete: () => _deleteTeam(context, ref, team),
-                      );
-                    },
-                  );
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await ref.refresh(refreshTeamsFromServerProvider.future);
+                  await ref.refresh(pendingNotificationsSummaryProvider.future);
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e')),
+                child: teamsAsync.when(
+                  data: (teams) {
+                    final summary = summaryAsync.valueOrNull;
+                    final pendingMap = summary?.pendingByTeam ?? const {};
+                    final showJoin = FeatureFlags.enableMembershipAuthV2;
+                    final extraCards = showJoin ? 2 : 1;
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: teams.length + extraCards,
+                      itemBuilder: (context, i) {
+                        if (showJoin && i == teams.length) {
+                          return _JoinTeamCard(
+                            onTap: () => context.push('/teams/join'),
+                          );
+                        }
+                        if (i == teams.length + (showJoin ? 1 : 0)) {
+                          return _AddTeamCard(
+                            onTap: () => context.push('/teams/new'),
+                          );
+                        }
+                        final team = teams[i];
+                        final playerCount = allPlayers.where((p) => p.teamId == team.uuid).length;
+                        final pendingCount = pendingMap[team.uuid] ?? 0;
+                        return _TeamCard(
+                          team: team,
+                          playerCount: playerCount,
+                          pendingCount: pendingCount,
+                          onDelete: () => _deleteTeam(context, ref, team),
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Error: $e')),
+                ),
               ),
             ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _DebugAccessPanel(),
+              ),
+            ],
           ],
         ),
       ),
@@ -317,6 +371,91 @@ class _AddTeamCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DebugAccessPanel extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userId = ref.watch(currentUserIdProvider);
+    final baseUrl = ref.watch(apiBaseUrlProvider);
+    final lastTeamsRefresh = ref.watch(lastTeamsRefreshTimeProvider);
+    final lastPendingCount = ref.watch(lastPendingListFetchCountProvider);
+    final lastSummaryCount = ref.watch(lastNotificationsSummaryCountProvider);
+
+    String _formatTime(DateTime? dt) {
+      if (dt == null) return 'never';
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inMinutes < 1) return 'just now';
+      if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+      if (diff.inDays < 1) return '${diff.inHours}h ago';
+      return '${diff.inDays}d ago';
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.chipInactive),
+      ),
+      color: Colors.white.withValues(alpha: 0.9),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Debug – Access state',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'UserId: $userId',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              'Backend: ${baseUrl.isEmpty ? 'disabled' : baseUrl}',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              'Last /teams refresh: ${_formatTime(lastTeamsRefresh)}',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              'Last pending-list count: $lastPendingCount',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            Text(
+              'Last summary totalPending: $lastSummaryCount',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () async {
+                  await ref.refresh(refreshTeamsFromServerProvider.future);
+                  await ref.refresh(pendingNotificationsSummaryProvider.future);
+                  final lastTeamId =
+                      ref.read(lastPendingListFetchTeamIdProvider);
+                  if (lastTeamId != null && lastTeamId.isNotEmpty) {
+                    await ref
+                        .refresh(serverPendingRequestsProvider(lastTeamId).future);
+                  }
+                },
+                icon: const Icon(Icons.bug_report, size: 18),
+                label: const Text('Force refresh'),
+              ),
+            ),
+          ],
         ),
       ),
     );

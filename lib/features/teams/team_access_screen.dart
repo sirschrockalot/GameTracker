@@ -14,6 +14,7 @@ import '../../domain/authorization/team_auth.dart';
 import '../../providers/current_user_provider.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/join_request_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/teams_provider.dart';
 
 class TeamAccessScreen extends ConsumerWidget {
@@ -84,6 +85,10 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
   @override
   void initState() {
     super.initState();
+    // Always fetch latest pending list from backend when this screen opens.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+    });
     _load();
   }
 
@@ -118,7 +123,11 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final serverPendingAsync = ref.watch(serverPendingRequestsProvider(widget.team.uuid));
+    final baseUrl = ref.watch(apiBaseUrlProvider);
+    final hasBackend = baseUrl.isNotEmpty;
+
+    final serverPendingAsync =
+        ref.watch(serverPendingRequestsProvider(widget.team.uuid));
     final serverPending = serverPendingAsync.valueOrNull ?? [];
     final serverMembersAsync = ref.watch(serverTeamMembersProvider(widget.team.uuid));
     final serverActive = (serverMembersAsync.valueOrNull ?? [])
@@ -211,21 +220,50 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
               ),
             ),
             const SizedBox(height: 8),
-            if (_localPending.isEmpty && serverPending.isEmpty)
-              _EmptySection(text: 'No pending requests.')
-            else ...[
-              // Server-backed pending requests for synced teams (owner-only).
-              ...serverPending.map((m) => _ServerPendingTile(
+            if (hasBackend) ...[
+              if (serverPendingAsync.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              else if (serverPendingAsync.hasError)
+                _ErrorBanner(
+                  message: 'Could not load pending requests from the cloud.',
+                  onRetry: () {
+                    ref.invalidate(
+                        serverPendingRequestsProvider(widget.team.uuid));
+                  },
+                )
+              else if (serverPending.isEmpty)
+                const _EmptySection(text: 'No pending requests.')
+              else ...[
+                ...serverPending.map(
+                  (m) => _ServerPendingTile(
                     member: m,
                     onApprove: () => _approveServerRequest(context, m),
                     onReject: () => _rejectServerRequest(context, m),
-                  )),
-              // Local pending requests (pre-sync or offline teams).
-              ..._localPending.map((r) => _PendingTile(
+                  ),
+                ),
+              ],
+            ] else ...[
+              if (_localPending.isEmpty && serverPending.isEmpty)
+                const _EmptySection(text: 'No pending requests.')
+              else ...[
+                ...serverPending.map(
+                  (m) => _ServerPendingTile(
+                    member: m,
+                    onApprove: () => _approveServerRequest(context, m),
+                    onReject: () => _rejectServerRequest(context, m),
+                  ),
+                ),
+                ..._localPending.map(
+                  (r) => _PendingTile(
                     request: r,
                     onApprove: () => _approveRequest(context, r),
                     onReject: () => _rejectRequest(context, r),
-                  )),
+                  ),
+                ),
+              ],
             ],
           ],
           if (!widget.isOwner && widget.isCoachViewOnly) ...[
@@ -303,6 +341,8 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
       );
     }
     await _load();
+    ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+    ref.invalidate(pendingNotificationsSummaryProvider);
   }
 
   Future<void> _rejectRequest(BuildContext context, JoinRequest request) async {
@@ -314,6 +354,8 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
       );
     }
     await _load();
+    ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+    ref.invalidate(pendingNotificationsSummaryProvider);
   }
 
   Future<void> _approveServerRequest(BuildContext context, Map<String, dynamic> member) async {
@@ -336,6 +378,7 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
     }
     ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
     ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+    ref.invalidate(pendingNotificationsSummaryProvider);
   }
 
   Future<void> _rejectServerRequest(BuildContext context, Map<String, dynamic> member) async {
@@ -358,6 +401,7 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
     }
     ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
     ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+    ref.invalidate(pendingNotificationsSummaryProvider);
   }
 
   Future<void> _revokeServerMember(BuildContext context, Map<String, dynamic> member) async {
@@ -721,6 +765,44 @@ class _EmptySection extends StatelessWidget {
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
             ),
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.redAccent),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, size: 18, color: Colors.redAccent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.redAccent,
+                  ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }
