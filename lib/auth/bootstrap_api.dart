@@ -99,3 +99,17 @@ Future<Map<String, dynamic>> bootstrapUpload(
   }
   return jsonDecode(res.body) as Map<String, dynamic>;
 }
+
+/// Download players and schedule events for a synced team.
+/// Expects the backend to return a payload shaped like { players, scheduleEvents }.
+Future<Map<String, dynamic>> bootstrapDownload(
+  AuthenticatedHttpClient client,
+  String teamId,
+) async {
+  final uri = Uri.parse('${client.baseUrl}/teams/$teamId/bootstrap');
+  final res = await client.get(uri);
+  if (res.statusCode != 200) {
+    throw Exception('Bootstrap download failed: ${res.statusCode}');
+  }
+  return jsonDecode(res.body) as Map<String, dynamic>;
+}

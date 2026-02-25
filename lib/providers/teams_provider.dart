@@ -6,6 +6,7 @@ import '../data/isar/models/join_request.dart';
 import '../data/isar/models/team.dart';
 import '../data/repositories/team_repository.dart';
 import '../data/repositories/join_request_repository.dart';
+import '../data/sync/bootstrap_upsert.dart';
 import 'current_user_provider.dart';
 import 'isar_provider.dart';
 
@@ -38,6 +39,10 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
   final currentUserId = ref.read(currentUserIdProvider);
   final teamMaps = await listCloudTeams(client);
 
+  // Track teams that have cloud sync enabled so we can bootstrap
+  // roster and schedule after the transaction completes.
+  final syncedTeamIds = <String>[];
+
   await isar.writeTxn(() async {
     final teamRepo = TeamRepository(isar);
     final joinRepo = JoinRequestRepository(isar);
@@ -63,6 +68,8 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
             updatedBy: data['updatedBy'] as String?,
             deletedAt: _parseDate(data['deletedAt']),
             schemaVersion: data['schemaVersion'] as int? ?? 1,
+            syncEnabled: data['syncEnabled'] as bool? ?? false,
+            lastSyncedAt: _parseDate(data['lastSyncedAt']),
           );
 
       if (existing != null) {
@@ -99,6 +106,15 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
             _parseDate(data['deletedAt']) ?? team.deletedAt;
         team.schemaVersion =
             data['schemaVersion'] as int? ?? team.schemaVersion;
+
+        final syncEnabled = data['syncEnabled'] as bool?;
+        if (syncEnabled != null) {
+          team.syncEnabled = syncEnabled;
+        }
+        final lastSyncedAt = _parseDate(data['lastSyncedAt']);
+        if (lastSyncedAt != null) {
+          team.lastSyncedAt = lastSyncedAt;
+        }
       }
 
       await isar.teams.put(team);
@@ -127,8 +143,24 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
         membership.updatedBy = currentUserId;
         await isar.joinRequests.put(membership);
       }
+
+      if (team.syncEnabled == true) {
+        syncedTeamIds.add(uuid);
+      }
     }
   });
+
+  // For any teams that are cloud-synced, download the latest
+  // roster and schedule so non-owner members see players/events.
+  for (final teamId in syncedTeamIds) {
+    try {
+      final response = await bootstrapDownload(client, teamId);
+      await upsertBootstrapResponse(isar, response);
+    } catch (_) {
+      // Swallow errors – teams list should still be correct even if
+      // bootstrap download fails (e.g. older backend without this endpoint).
+    }
+  }
 
   ref.read(lastTeamsRefreshTimeProvider.notifier).state = DateTime.now();
 });
