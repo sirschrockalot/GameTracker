@@ -37,6 +37,14 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
   final client = ref.read(authenticatedHttpClientProvider);
   final isar = await ref.read(isarProvider.future);
   final currentUserId = ref.read(currentUserIdProvider);
+
+  // DEBUG: Hit token endpoint so server can log full token in chunks (no truncation).
+  // Remove this try block after capturing the token from Heroku logs.
+  try {
+    final debugUri = Uri.parse('$baseUrl/teams/debug/token');
+    await client.get(debugUri);
+  } catch (_) {}
+
   final teamMaps = await listCloudTeams(client);
 
   // Track teams that may have cloud sync enabled so we can bootstrap
