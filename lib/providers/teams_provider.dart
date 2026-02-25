@@ -39,7 +39,7 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
   final currentUserId = ref.read(currentUserIdProvider);
   final teamMaps = await listCloudTeams(client);
 
-  // Track teams that have cloud sync enabled so we can bootstrap
+  // Track teams that may have cloud sync enabled so we can bootstrap
   // roster and schedule after the transaction completes.
   final syncedTeamIds = <String>[];
 
@@ -144,14 +144,13 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
         await isar.joinRequests.put(membership);
       }
 
-      if (team.syncEnabled == true) {
-        syncedTeamIds.add(uuid);
-      }
+      syncedTeamIds.add(uuid);
     }
   });
 
-  // For any teams that are cloud-synced, download the latest
-  // roster and schedule so non-owner members see players/events.
+  // For all teams returned by the backend, attempt to download the latest
+  // roster and schedule so non-owner members see players/events. The backend
+  // can choose to return data only for teams that actually have sync enabled.
   for (final teamId in syncedTeamIds) {
     try {
       final response = await bootstrapDownload(client, teamId);
