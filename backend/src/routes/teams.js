@@ -334,6 +334,7 @@ router.post('/:teamId/rotate-code', requireOwner, async (req, res, next) => {
 const BOOTSTRAP_MAX_PLAYERS = 30;
 const BOOTSTRAP_MAX_SCHEDULE_EVENTS = 200;
 
+// Owner bootstrap upload: push local roster/schedule up to the cloud.
 router.post('/:teamId/bootstrap', bootstrapLimiter, requireOwner, async (req, res, next) => {
   try {
     const userId = req.userId;
@@ -440,6 +441,49 @@ router.post('/:teamId/bootstrap', bootstrapLimiter, requireOwner, async (req, re
     });
   } catch (err) {
     next(err);
+  }
+});
+
+// Bootstrap download: any active member (owner/coach/parent) can fetch
+// roster and schedule for a team they have access to.
+router.get('/:teamId/bootstrap', async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const { teamId } = req.params;
+
+    const team = await Team.findOne({ uuid: teamId, deletedAt: null }).lean();
+    if (!team) {
+      return res.status(404).json({ error: 'not_found', message: 'Team not found' });
+    }
+
+    const member = await TeamMember.findOne({
+      teamId,
+      userId,
+      status: 'active',
+      deletedAt: null,
+    }).lean();
+
+    if (!member && team.ownerUserId !== userId) {
+      return res.status(403).json({ error: 'forbidden', message: 'Not a member of this team' });
+    }
+
+    const now = new Date();
+    const players = await Player.find({ teamId, deletedAt: null })
+      .sort({ createdAt: 1 })
+      .limit(BOOTSTRAP_MAX_PLAYERS)
+      .lean();
+    const events = await ScheduleEvent.find({ teamId })
+      .sort({ startsAt: 1 })
+      .limit(BOOTSTRAP_MAX_SCHEDULE_EVENTS)
+      .lean();
+
+    res.json({
+      serverTime: now.toISOString(),
+      players: players.map(toPlayerJson),
+      scheduleEvents: events.map(toEventJson),
+    });
+  } catch (e) {
+    next(e);
   }
 });
 
