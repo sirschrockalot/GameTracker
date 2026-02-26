@@ -155,7 +155,16 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
             if (game == null) {
               return const Center(child: Text('Game not found'));
             }
-            final presentIds = game.presentPlayerIds.toSet();
+
+            // Fallback: if presentPlayerIds is empty (e.g. legacy or buggy data),
+            // treat all players on this team as present so the UI and suggestions still work.
+            Set<String> presentIds = game.presentPlayerIds.toSet();
+            if (presentIds.isEmpty) {
+              presentIds = allPlayers
+                  .where((p) => p.teamId == game!.teamId)
+                  .map((p) => p.uuid)
+                  .toSet();
+            }
             final presentPlayers =
                 allPlayers.where((p) => presentIds.contains(p.uuid)).toList();
             final quarterNum = _selectedQuarter + 1;
@@ -699,7 +708,7 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('End game?'),
         content: const Text(
-          'All lineups and playing time are saved. You can view the full summary with who played which quarters.',
+          'All lineups and playing time are saved. You can review the summary and then head to history or start another game.',
         ),
         actions: [
           TextButton(
@@ -724,9 +733,90 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
         ref.read(suggestedQuarterProvider.notifier).state = null;
         ref.read(swapSelectionProvider.notifier).state = null;
         if (context.mounted) {
-          context.go('/history');
-          context.push('/history/$gameUuid');
+          _showPostGameOptions(context, gameUuid);
         }
+      },
+    );
+  }
+
+  Future<void> _showPostGameOptions(
+    BuildContext context,
+    String gameUuid,
+  ) async {
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: AppColors.onCourtGreen),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Game completed',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'What would you like to do next?',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.summarize_outlined),
+                    label: const Text('View game summary'),
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      context.go('/history');
+                      context.push('/history/$gameUuid');
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.history),
+                    label: const Text('Go to game history'),
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      context.go(AppRoute.history.path);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.go(AppRoute.gameDashboard.path);
+                  },
+                  child: const Text('Done for now'),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -738,7 +828,9 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
   ) async {
     final startQ = game.currentQuarter + 1;
     if (startQ > AppConstants.quartersPerGame) return;
-    final presentIds = game.presentPlayerIds.toSet();
+    // Use the same present set as the main UI: derive from presentPlayers so we
+    // still work for legacy games where presentPlayerIds might be empty.
+    final presentIds = presentPlayers.map((p) => p.uuid).toSet();
     if (presentIds.length < AppConstants.playersOnCourt) return;
     final completed = game.completedQuarters;
 

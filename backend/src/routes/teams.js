@@ -155,21 +155,6 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// DEBUG: Get full auth token (no truncation). Remove after use.
-// Call from app (e.g. trigger Refresh), then either:
-// - Use Charles/Proxyman to read response body, or
-// - Check Heroku logs for TOKEN_CHUNK lines and paste chunks back together.
-router.get('/debug/token', (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.replace(/^Bearer\s+/i, '').trim();
-  const chunkSize = 80;
-  for (let i = 0; i < token.length; i += chunkSize) {
-    console.log('TOKEN_CHUNK', token.slice(i, i + chunkSize));
-  }
-  res.set('Content-Type', 'text/plain; charset=utf-8');
-  res.send(token);
-});
-
 router.get('/:teamId/requests', requireOwner, async (req, res, next) => {
   try {
     const { teamId } = req.params;

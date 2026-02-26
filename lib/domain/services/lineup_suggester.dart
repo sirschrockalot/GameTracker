@@ -2,10 +2,6 @@ import '../../data/isar/models/player.dart';
 
 const int _defaultRequiredOnCourt = 5;
 
-const double _fairnessWeight = 1.0;
-const double _rotationWeight = 0.4;
-const double _mixWeight = 1.0;
-
 /// Result of suggesting a lineup for the next quarter.
 class Suggestion {
   const Suggestion({
@@ -72,7 +68,14 @@ Suggestion suggestLineup({
   final hasDeveloping = presentPlayers.any((p) => p.skill == Skill.developing);
 
   List<List<String>> combinations = _combinations(presentIds, requiredOnCourt);
-  double bestScore = -double.infinity;
+
+  // Choose lineup lexicographically:
+  // 1) Minimize spread in quarters played (fairness)
+  // 2) Among equal-spread options, maximize rotation from last sitting
+  // 3) As a final tiebreaker, prefer mixed strong/developing over all-strong
+  int? bestSpread;
+  double bestRotation = -1;
+  double bestMix = -1;
   List<String>? bestOnCourt;
 
   for (final combo in combinations) {
@@ -84,7 +87,6 @@ Suggestion suggestLineup({
     final maxP = presentCounts.reduce((a, b) => a > b ? a : b);
     final minP = presentCounts.reduce((a, b) => a < b ? a : b);
     final spread = maxP - minP;
-    final fairnessScore = -spread.toDouble();
 
     final rotationScore =
         combo.where((id) => lastSittingSet.contains(id)).length / requiredOnCourt;
@@ -100,12 +102,28 @@ Suggestion suggestLineup({
       }
     }
 
-    final score = _fairnessWeight * fairnessScore +
-        _rotationWeight * rotationScore +
-        _mixWeight * mixScore;
+    if (bestOnCourt == null) {
+      bestSpread = spread;
+      bestRotation = rotationScore;
+      bestMix = mixScore;
+      bestOnCourt = List.from(combo);
+      continue;
+    }
 
-    if (score > bestScore) {
-      bestScore = score;
+    final currentBestSpread = bestSpread!;
+    const double eps = 1e-9;
+
+    final isBetterFairness = spread < currentBestSpread;
+    final isEqualFairness = spread == currentBestSpread;
+    final isBetterRotation = rotationScore > bestRotation + eps;
+    final isEqualRotation = (rotationScore - bestRotation).abs() <= eps;
+    final isBetterMix = mixScore > bestMix + eps;
+
+    if (isBetterFairness ||
+        (isEqualFairness && (isBetterRotation || (isEqualRotation && isBetterMix)))) {
+      bestSpread = spread;
+      bestRotation = rotationScore;
+      bestMix = mixScore;
       bestOnCourt = List.from(combo);
     }
   }
