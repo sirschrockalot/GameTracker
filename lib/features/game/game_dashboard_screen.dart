@@ -158,14 +158,14 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
               return const Center(child: Text('Game not found'));
             }
 
-            // Fallback: if presentPlayerIds is empty (e.g. legacy or buggy data),
-            // treat all players on this team as present so the UI and suggestions still work.
+            // Only players selected at game start (presentPlayerIds) or who appear in lineups (sync/legacy).
+            // Do not fall back to all team players so the game and awards show only "who's here" for this game.
             Set<String> presentIds = game.presentPlayerIds.toSet();
             if (presentIds.isEmpty) {
-              presentIds = allPlayers
-                  .where((p) => p.teamId == game!.teamId)
-                  .map((p) => p.uuid)
+              final fromLineups = game.quarterLineups.values
+                  .expand((list) => list)
                   .toSet();
+              if (fromLineups.isNotEmpty) presentIds = fromLineups;
             }
             final presentPlayers =
                 allPlayers.where((p) => presentIds.contains(p.uuid)).toList();

@@ -160,6 +160,12 @@ class _SummaryBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _AwardsSection(
+          awards: awards,
+          nameForUuid: _name,
+          colorForAward: _colorForAward,
+        ),
+        const SizedBox(height: 20),
         _SectionCard(
           title: 'Date & time',
           child: Text(
@@ -168,25 +174,6 @@ class _SummaryBody extends StatelessWidget {
               color: AppColors.textPrimary,
               fontSize: 15,
             ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        _SectionCard(
-          title: 'Quarters played',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: played.entries.map((e) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '${_name(e.key)}: ${e.value}',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                  ),
-                ),
-              );
-            }).toList(),
           ),
         ),
         const SizedBox(height: 20),
@@ -232,46 +219,6 @@ class _SummaryBody extends StatelessWidget {
             }),
           ),
         ),
-        const SizedBox(height: 20),
-        _SectionCard(
-          title: 'Awards',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: AwardType.values.map((cat) {
-              final list = awards[cat] ?? [];
-              final label = switch (cat) {
-                AwardType.christlikeness => 'Christlikeness',
-                AwardType.defense => 'Defense',
-                AwardType.effort => 'Effort',
-                AwardType.offense => 'Offense',
-                AwardType.sportsmanship => 'Sportsmanship',
-              };
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.star,
-                      size: 18,
-                      color: _colorForAward(cat),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '$label: ${list.isEmpty ? '—' : list.map(_name).join(', ')}',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
       ],
     );
   }
@@ -282,6 +229,124 @@ class _SummaryBody extends StatelessWidget {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return months[m - 1];
+  }
+}
+
+/// Prominent awards section for handing out awards at end of game — first and most visible.
+class _AwardsSection extends StatelessWidget {
+  const _AwardsSection({
+    required this.awards,
+    required this.nameForUuid,
+    required this.colorForAward,
+  });
+
+  final Map<AwardType, List<String>> awards;
+  final String Function(String) nameForUuid;
+  final Color Function(AwardType) colorForAward;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.saveAwardsGold.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.saveAwardsGold.withValues(alpha: 0.5),
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.saveAwardsGold.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events,
+                    color: AppColors.saveAwardsGold,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Awards',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        fontSize: 20,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Hand out awards at the end of the game',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            ...AwardType.values.map((cat) {
+              final list = awards[cat] ?? [];
+              final label = switch (cat) {
+                AwardType.christlikeness => 'Christlikeness',
+                AwardType.defense => 'Defense',
+                AwardType.effort => 'Effort',
+                AwardType.offense => 'Offense',
+                AwardType.sportsmanship => 'Sportsmanship',
+              };
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.star,
+                      size: 22,
+                      color: colorForAward(cat),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            list.isEmpty
+                                ? '—'
+                                : list.map(nameForUuid).join(', '),
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 }
 

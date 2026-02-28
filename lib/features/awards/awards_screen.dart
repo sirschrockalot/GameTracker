@@ -69,7 +69,15 @@ class _AwardsScreenState extends ConsumerState<AwardsScreen> {
                     final awards = game.awards;
                     final totalGiven = awards.values
                         .fold<int>(0, (sum, list) => sum + list.length);
-                    final presentUuids = game.presentPlayerIds.toSet();
+                    // Only players selected at game start (presentPlayerIds) or who appear in lineups (sync/legacy).
+                    // Do not use all team players so awards show only "who's here" for this game.
+                    Set<String> presentUuids = game.presentPlayerIds.toSet();
+                    if (presentUuids.isEmpty) {
+                      final fromLineups = game.quarterLineups.values
+                          .expand((list) => list)
+                          .toSet();
+                      if (fromLineups.isNotEmpty) presentUuids = fromLineups;
+                    }
                     final presentPlayers = allPlayers
                         .where((p) => presentUuids.contains(p.uuid))
                         .toList();

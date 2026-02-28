@@ -164,6 +164,7 @@ class GameRepository {
   }
 
   /// Upsert from server payload. Sets quartersPlayedJson from quarterLineups (never from server).
+  /// Preserves existing presentPlayerIds when server lineups are empty (server does not store presentPlayerIds).
   Future<void> upsertFromServerGame(Map<String, dynamic> m) async {
     final uuid = m['uuid'] as String?;
     if (uuid == null) return;
@@ -176,7 +177,7 @@ class GameRepository {
     final schemaVersion = m['schemaVersion'] as int? ?? 1;
     final deletedAt = _parseDate(m['deletedAt']);
     final lineups = GameSerialization.decodeQuarterLineups(quarterLineupsJson);
-    final presentPlayerIds = lineups.values
+    List<String> presentPlayerIds = lineups.values
         .expand((list) => list)
         .toSet()
         .toList();
@@ -188,6 +189,11 @@ class GameRepository {
 
     await _isar.writeTxn(() async {
       final existing = await _isar.games.filter().uuidEqualTo(uuid).findFirst();
+      // Server does not store presentPlayerIds; we derive from lineups. When lineups are empty
+      // (e.g. new game just pushed), keep existing presentPlayerIds so coach's "who's here" selection is preserved.
+      if (presentPlayerIds.isEmpty && existing != null && existing.presentPlayerIds.isNotEmpty) {
+        presentPlayerIds = List.from(existing.presentPlayerIds);
+      }
       final game = Game()
         ..uuid = uuid
         ..teamId = teamId
