@@ -369,6 +369,17 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
           SnackBar(content: Text('${member['coachName'] ?? 'Coach'} approved')),
         );
       }
+      // Update local Isar so this request is no longer shown as pending (avoids duplicate/stale in merged views).
+      final isar = await ref.read(isarProvider.future);
+      final approvedBy = ref.read(currentUserIdProvider);
+      await JoinRequestRepository(isar).approve(requestId, approvedBy);
+      // Force refetch and wait so the UI updates immediately without showing stale "pending".
+      ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+      ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+      await ref.read(serverPendingRequestsProvider(widget.team.uuid).future);
+      await ref.read(serverTeamMembersProvider(widget.team.uuid).future);
+      if (mounted) await _load();
+      ref.invalidate(pendingNotificationsSummaryProvider);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -376,9 +387,6 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
         );
       }
     }
-    ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
-    ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
-    ref.invalidate(pendingNotificationsSummaryProvider);
   }
 
   Future<void> _rejectServerRequest(BuildContext context, Map<String, dynamic> member) async {
@@ -392,6 +400,15 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
           SnackBar(content: Text('Request from ${member['coachName'] ?? 'coach'} rejected')),
         );
       }
+      // Update local Isar so this request is no longer shown as pending.
+      final isar = await ref.read(isarProvider.future);
+      await JoinRequestRepository(isar).reject(requestId, updatedBy: ref.read(currentUserIdProvider));
+      ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
+      ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
+      await ref.read(serverPendingRequestsProvider(widget.team.uuid).future);
+      await ref.read(serverTeamMembersProvider(widget.team.uuid).future);
+      if (mounted) await _load();
+      ref.invalidate(pendingNotificationsSummaryProvider);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -399,9 +416,6 @@ class _TeamAccessBodyState extends ConsumerState<_TeamAccessBody> {
         );
       }
     }
-    ref.invalidate(serverPendingRequestsProvider(widget.team.uuid));
-    ref.invalidate(serverTeamMembersProvider(widget.team.uuid));
-    ref.invalidate(pendingNotificationsSummaryProvider);
   }
 
   Future<void> _revokeServerMember(BuildContext context, Map<String, dynamic> member) async {

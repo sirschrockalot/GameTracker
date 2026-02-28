@@ -10,7 +10,9 @@ import '../../data/isar/models/game.dart';
 import '../../data/isar/models/player.dart';
 import '../../data/isar/models/team.dart';
 import '../../data/repositories/game_repository.dart';
+import '../../data/sync/game_sync.dart';
 import '../../domain/services/lineup_suggester.dart';
+import '../../auth/auth_providers.dart';
 import '../../providers/isar_provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/players_provider.dart';
@@ -732,11 +734,24 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
         ref.read(suggestedLineupProvider.notifier).state = null;
         ref.read(suggestedQuarterProvider.notifier).state = null;
         ref.read(swapSelectionProvider.notifier).state = null;
+        _pushCompletedGameToServer();
         if (context.mounted) {
           _showPostGameOptions(context, gameUuid);
         }
       },
     );
+  }
+
+  /// Pushes all local games (including the one just completed) to the server so other coaches see it in history.
+  void _pushCompletedGameToServer() {
+    Future<void> run() async {
+      try {
+        final client = ref.read(authenticatedHttpClientProvider);
+        final isar = await ref.read(isarProvider.future);
+        await pushLocalGamesToServer(client, isar);
+      } catch (_) {}
+    }
+    run();
   }
 
   Future<void> _showPostGameOptions(

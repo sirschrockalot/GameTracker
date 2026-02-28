@@ -1,9 +1,9 @@
 import 'package:isar/isar.dart';
 
-import '../auth/api_client.dart';
-import '../auth/memberships_api.dart';
-import '../data/isar/models/join_request.dart';
-import '../domain/authorization/join_request_status_mapping.dart';
+import '../../auth/api_client.dart';
+import '../../auth/memberships_api.dart';
+import '../../domain/authorization/join_request_status_mapping.dart';
+import '../isar/models/join_request.dart';
 import '../repositories/game_repository.dart';
 import '../repositories/join_request_repository.dart';
 import '../repositories/player_repository.dart';

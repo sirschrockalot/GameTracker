@@ -43,11 +43,37 @@ Future<void> _pullLatest(WidgetRef ref) async {
   }
 }
 
-class HistoryScreen extends ConsumerWidget {
+/// Silent push + pull so history is fresh when screen is shown (no success snackbar).
+Future<void> _refreshHistorySilent(WidgetRef ref) async {
+  final baseUrl = ref.read(apiBaseUrlProvider);
+  if (baseUrl.isEmpty) return;
+  try {
+    final client = ref.read(authenticatedHttpClientProvider);
+    final isar = await ref.read(isarProvider.future);
+    await pushLocalGamesToServer(client, isar);
+    await pullGamesIntoIsar(client, isar);
+    ref.invalidate(gamesStreamProvider);
+  } catch (_) {}
+}
+
+class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshHistorySilent(ref);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final gamesAsync = ref.watch(gamesStreamProvider);
 
     return Scaffold(

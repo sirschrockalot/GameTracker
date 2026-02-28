@@ -48,9 +48,9 @@ class TeamAuth {
     return !hasPendingRequest && !hasApprovedRequest;
   }
 
-  /// True if [ownerUserId] looks like a Firebase anonymous UID (e.g. 28 chars, no dashes).
-  /// Used to migrate teams from Firebase auth to JWT so the same device keeps ownership.
-  static bool looksLikeFirebaseUid(String? ownerUserId) {
+  /// True if [ownerUserId] looks like a legacy anonymous UID (e.g. 28 chars, no dashes).
+  /// Used to migrate teams from legacy auth to JWT so the same device keeps ownership.
+  static bool looksLikeLegacyAnonymousUid(String? ownerUserId) {
     if (ownerUserId == null || ownerUserId.isEmpty) return false;
     if (ownerUserId.contains('-')) return false; // UUIDs have dashes
     return ownerUserId.length >= 20 && ownerUserId.length <= 32;

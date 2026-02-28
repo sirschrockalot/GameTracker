@@ -7,13 +7,13 @@ This plan enables multiple coaches to see and share the same team data and have 
 ## Phase 1: Backend & Identity (Foundation)
 
 ### 1.1 Choose and provision backend
-- [ ] **1.1.1** Choose backend stack (e.g. Firebase Firestore + Cloud Functions, Supabase, or custom REST/GraphQL API).
+- [ ] **1.1.1** Choose backend stack (e.g. Supabase, or custom REST/GraphQL API).
 - [ ] **1.1.2** Define backend data model for: Team, JoinRequest (membership), Player, ScheduleEvent, Game — aligned with existing Isar models and team-scoping (`teamId`).
 - [ ] **1.1.3** Add `updatedAt` / `updatedBy` (or equivalent) to all synced entities on the backend for conflict detection and audit.
 - [ ] **1.1.4** Implement server-side access control: only members of a team can read/write that team’s data; enforce owner-only for team admin, owner/coach for coach tools, and read-only for parents where applicable (mirror `lib/domain/authorization/team_auth.dart`).
 
 ### 1.2 Authentication
-- [ ] **1.2.1** Integrate a real auth provider (e.g. Firebase Auth, Supabase Auth, or custom) so every user has a stable, unique `userId` across devices.
+- [ ] **1.2.1** Integrate a real auth provider (e.g. Supabase Auth, or custom) so every user has a stable, unique `userId` across devices.
 - [ ] **1.2.2** Replace `currentUserIdProvider` in `lib/providers/current_user_provider.dart` with the real authenticated user id (and handle unauthenticated state: sign-in/sign-out flows).
 - [ ] **1.2.3** Ensure sign-in is required before accessing team list / join / team detail (or show limited UI and prompt sign-in).
 - [ ] **1.2.4** (Optional) Add display name or email from auth for “who approved” / “who changed” in UI and sync metadata.
@@ -39,7 +39,7 @@ This plan enables multiple coaches to see and share the same team data and have 
 ## Phase 3: Sync Layer (Replace MockSyncProvider)
 
 ### 3.1 Sync provider implementation
-- [ ] **3.1.1** Implement a real `SyncProvider` (e.g. `FirebaseSyncProvider` or `ApiSyncProvider`) that:
+- [ ] **3.1.1** Implement a real `SyncProvider` (e.g. `ApiSyncProvider`) that:
   - Pushes local changes (create/update/delete) for Team, JoinRequest, Player, ScheduleEvent, Game to the backend.
   - Pulls from backend the set of teams the user is a member of plus all related entities (or incremental updates).
 - [ ] **3.1.2** Define which operations trigger a push (e.g. on repo add/update/delete for synced entities) and when to pull (e.g. app foreground, after push, periodic, or real-time listeners).

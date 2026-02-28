@@ -8,6 +8,7 @@ import '../data/isar/models/join_request.dart';
 import '../data/isar/models/team.dart';
 import '../data/repositories/team_repository.dart';
 import '../data/repositories/join_request_repository.dart';
+import '../data/repositories/sync_outbox_repository.dart';
 import '../data/sync/bootstrap_upsert.dart';
 import '../data/sync/game_sync.dart';
 import '../data/sync/membership_sync_service.dart';
@@ -61,7 +62,7 @@ final allowedTeamIdsStreamProvider = StreamProvider<Set<String>>((ref) async* {
   final joinRepo = JoinRequestRepository(isar);
   final teamRepo = TeamRepository(isar);
 
-  Set<String> compute() async {
+  Future<Set<String>> compute() async {
     final approved = await joinRepo.listApprovedTeamIdsForUser(userId);
     final teams = await teamRepo.getAll();
     final ownerIds = teams
@@ -114,6 +115,9 @@ final visibleTeamsStreamProvider = StreamProvider<List<Team>>((ref) {
   };
   return controller.stream;
 });
+
+/// Last successful /teams refresh time from server.
+final lastTeamsRefreshTimeProvider = StateProvider<DateTime?>((_) => null);
 
 /// Last API error message (debug).
 final lastApiErrorProvider = StateProvider<String?>((_) => null);
@@ -277,8 +281,13 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
 });
 
 /// Pending sync outbox count (non-blocking banner when > 0).
-final pendingOutboxCountStreamProvider = StreamProvider<int>((ref) {
+final pendingOutboxCountStreamProvider = StreamProvider<int>((ref) async* {
   final isar = ref.watch(isarProvider).valueOrNull;
-  if (isar == null) return Stream.value(0);
-  return isar.syncOutboxItems.where().watch(fireImmediately: true).map((list) => list.length);
+  if (isar == null) {
+    yield 0;
+    return;
+  }
+  final repo = SyncOutboxRepository(isar);
+  yield await repo.count();
+  yield* Stream.periodic(const Duration(seconds: 5), (_) {}).asyncMap((_) => repo.count());
 });

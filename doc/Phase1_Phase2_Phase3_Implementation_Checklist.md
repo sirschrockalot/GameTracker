@@ -13,7 +13,7 @@ Starts from current repo state. Reference: `lib/` structure, `doc/Backend_Spec_H
 | ID | Task | Est. |
 |----|------|------|
 | B1.1 | Provision Heroku app and MongoDB Atlas cluster; set env vars (e.g. `MONGODB_URI`, `JWT_SECRET`). | 1–2h |
-| B1.2 | Implement auth: issue JWT (or session) from chosen provider (e.g. Firebase Auth token verification, or custom email/password); expose `userId` in middleware for all protected routes. | 2–3h |
+| B1.2 | Implement auth: issue JWT (or session) from chosen provider (e.g. custom email/password or token verification); expose `userId` in middleware for all protected routes. | 2–3h |
 | B1.3 | Create Mongo collections: `teams`, `join_requests` (no `playerIds` on teams). Add indexes per Backend Spec §2 (uuid unique; teamId+status; userId; updatedAt). | 1h |
 | B1.4 | Implement POST /teams (create), GET /teams/:uuid; set server `updatedAt`/`updatedBy`. Enforce: caller must have `status=active` membership for GET (or is creator for POST). | 2h |
 | B1.5 | Implement POST /teams/:uuid/rotate-coach-code, POST /teams/:uuid/rotate-parent-code; owner-only; set server `updatedAt`/`updatedBy`. | 1h |
@@ -25,7 +25,7 @@ Starts from current repo state. Reference: `lib/` structure, `doc/Backend_Spec_H
 | ID | Task | Est. |
 |----|------|------|
 | M1.1 | Add dependency (e.g. `http` or `dio`) in `pubspec.yaml`; create API client package or folder (e.g. `lib/data/api/` or `lib/core/api_client.dart`) with base URL from env/config and Bearer token injection. | 1h |
-| M1.2 | Integrate real auth (e.g. Firebase Auth, Supabase, or custom): sign-in/sign-out; replace `lib/providers/current_user_provider.dart` so it returns real `userId` or null when unauthenticated. | 2–3h |
+| M1.2 | Integrate real auth (e.g. Supabase or custom): sign-in/sign-out; replace `lib/providers/current_user_provider.dart` so it returns real `userId` or null when unauthenticated. | 2–3h |
 | M1.3 | Add auth gate in app: require sign-in before teams list / join / team detail (or show limited UI and prompt sign-in); wire router/guard using existing `lib/router/app_router.dart`. | 1–2h |
 | M1.4 | Create team API client: create team (POST /teams), get team (GET /teams/:uuid), rotate coach code, rotate parent code; map JSON ↔ DTO; call from a stub or optional path so existing flows still use Isar-only until Phase 2. | 2h |
 | M1.5 | Create membership API client: request-join (POST /membership/request-join), list pending (GET /membership/pending), approve/reject/revoke (POST /membership/:uuid/...); map status "active" ↔ local enum (e.g. keep `JoinRequestStatus.approved` locally and map to "active" in API). | 2h |

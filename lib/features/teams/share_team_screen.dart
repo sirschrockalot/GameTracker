@@ -27,16 +27,36 @@ String shareInviteMessage({
 String joinDeepLink(String code, String role) =>
     'rosterflow://join?code=${Uri.encodeComponent(code)}&role=$role';
 
-class ShareTeamScreen extends ConsumerWidget {
+class ShareTeamScreen extends ConsumerStatefulWidget {
   const ShareTeamScreen({super.key, required this.teamUuid});
 
   final String teamUuid;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ShareTeamScreen> createState() => _ShareTeamScreenState();
+}
+
+class _ShareTeamScreenState extends ConsumerState<ShareTeamScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final teamsAsync = ref.watch(visibleTeamsStreamProvider);
     final teams = teamsAsync.valueOrNull ?? [];
-    final team = teams.where((t) => t.uuid == teamUuid).firstOrNull;
+    final team = teams.where((t) => t.uuid == widget.teamUuid).firstOrNull;
 
     if (team == null) {
       return Scaffold(
@@ -84,27 +104,40 @@ class ShareTeamScreen extends ConsumerWidget {
           ],
         ),
         centerTitle: true,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primaryOrange,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primaryOrange,
+          tabs: const [
+            Tab(text: 'Coach invite', icon: Icon(Icons.sports)),
+            Tab(text: 'Parent invite', icon: Icon(Icons.people_outline)),
+          ],
+        ),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+        child: TabBarView(
+          controller: _tabController,
           children: [
-            _InviteSection(
-              title: 'Coach Invite',
-              subtitle: 'Coaches can manage lineup, roster, games.',
-              code: team.coachCode.isEmpty ? '—' : team.coachCode,
-              role: 'coach',
-              deepLink: joinDeepLink(team.coachCode, 'coach'),
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              child: _InviteSection(
+                title: 'Coach Invite',
+                subtitle: 'Coaches can manage lineup, roster, games.',
+                code: team.coachCode.isEmpty ? '—' : team.coachCode,
+                role: 'coach',
+                deepLink: joinDeepLink(team.coachCode, 'coach'),
+              ),
             ),
-            const SizedBox(height: 28),
-            const Divider(height: 1, color: AppColors.chipInactive),
-            const SizedBox(height: 28),
-            _InviteSection(
-              title: 'Parent Invite',
-              subtitle: 'Parents can view schedule only.',
-              code: team.parentCode.isEmpty ? '—' : team.parentCode,
-              role: 'parent',
-              deepLink: joinDeepLink(team.parentCode, 'parent'),
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              child: _InviteSection(
+                title: 'Parent Invite',
+                subtitle: 'Parents can view schedule only.',
+                code: team.parentCode.isEmpty ? '—' : team.parentCode,
+                role: 'parent',
+                deepLink: joinDeepLink(team.parentCode, 'parent'),
+              ),
             ),
           ],
         ),
@@ -212,16 +245,36 @@ class _InviteSection extends StatelessWidget {
           ],
         ),
         if (canCopyShare) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+          Center(
+            child: Text(
+              role == 'coach'
+                  ? 'Scan this code to invite a coach'
+                  : 'Scan this code to invite a parent',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
           Center(
             child: Container(
-              width: 180,
-              height: 180,
-              padding: const EdgeInsets.all(16),
+              width: 220,
+              height: 220,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.chipInactive),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: QrImageView(
                 data: deepLink,

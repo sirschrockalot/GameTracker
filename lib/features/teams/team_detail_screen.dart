@@ -149,11 +149,11 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
         final canView = TeamAuth.canViewTeam(team, currentUserId, isApprovedMember, installId);
         final canManage = TeamAuth.canManageTeam(team, currentUserId, installId);
         if (!canView) {
-          // Migrate: team may have been created with Firebase UID or 'local'; reclaim ownership for this device.
+          // Migrate: team may have been created with legacy UID or 'local'; reclaim ownership for this device.
           final canMigrate = team.ownerUserId != null &&
               team.ownerUserId != currentUserId &&
               team.ownerUserId != installId &&
-              (team.ownerUserId == 'local' || TeamAuth.looksLikeFirebaseUid(team.ownerUserId));
+              (team.ownerUserId == 'local' || TeamAuth.looksLikeLegacyAnonymousUid(team.ownerUserId));
           if (canMigrate) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _migrateTeamOwnerToCurrentUser(ref, team);
@@ -419,11 +419,11 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
         await approveRequest(client, team.uuid, request.uuid);
       } catch (_) {}
     }
-    if (!request.isFromServer) {
-      final isar = await ref.read(isarProvider.future);
-      await JoinRequestRepository(isar).approve(request.uuid, approvedBy);
-    }
+    final isar = await ref.read(isarProvider.future);
+    await JoinRequestRepository(isar).approve(request.uuid, approvedBy);
     ref.invalidate(serverPendingRequestsProvider(team.uuid));
+    ref.invalidate(approvedMembersProvider(team.uuid));
+    await ref.read(serverPendingRequestsProvider(team.uuid).future);
     ref.invalidate(pendingNotificationsSummaryProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -444,11 +444,10 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
         await rejectRequest(client, team.uuid, request.uuid);
       } catch (_) {}
     }
-    if (!request.isFromServer) {
-      final isar = await ref.read(isarProvider.future);
-      await JoinRequestRepository(isar).reject(request.uuid, updatedBy: ref.read(currentUserIdProvider));
-    }
+    final isar = await ref.read(isarProvider.future);
+    await JoinRequestRepository(isar).reject(request.uuid, updatedBy: ref.read(currentUserIdProvider));
     ref.invalidate(serverPendingRequestsProvider(team.uuid));
+    await ref.read(serverPendingRequestsProvider(team.uuid).future);
     ref.invalidate(pendingNotificationsSummaryProvider);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
