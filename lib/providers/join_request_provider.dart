@@ -211,17 +211,36 @@ final userTeamMembershipProvider =
   return UserTeamMembership(team: team, isOwner: isOwner, membership: membership);
 });
 
+/// Debug: membership counts for current user (active, pending, revoked).
+final membershipCountsProvider = FutureProvider<({int active, int pending, int revoked})>((ref) async {
+  final isar = await ref.watch(isarProvider.future);
+  final userId = ref.watch(currentUserIdProvider);
+  final list = await JoinRequestRepository(isar).listByUserId(userId);
+  int active = 0, pending = 0, revoked = 0;
+  for (final r in list) {
+    switch (r.status) {
+      case JoinRequestStatus.approved: active++; break;
+      case JoinRequestStatus.pending: pending++; break;
+      case JoinRequestStatus.revoked:
+      case JoinRequestStatus.rejected: revoked++; break;
+    }
+  }
+  return (active: active, pending: pending, revoked: revoked);
+});
+
 /// True if the current user can access coach-only routes (has at least one team where they can use coach tools).
 final canAccessCoachNavProvider = FutureProvider<bool>((ref) async {
-  // Before auth/membership v2, always allow coach nav (single-user coach app).
   if (!FeatureFlags.enableMembershipAuthV2) return true;
 
   final isar = await ref.watch(isarProvider.future);
   final userId = ref.watch(currentUserIdProvider);
   final installId = ref.watch(installIdProvider).valueOrNull;
-  final teams = await TeamRepository(isar).getAll();
+  final allowedIds = await ref.watch(allowedTeamIdsProvider.future);
+  final teamRepo = TeamRepository(isar);
   final joinRepo = JoinRequestRepository(isar);
-  for (final team in teams) {
+  for (final teamId in allowedIds) {
+    final team = await teamRepo.getByUuid(teamId);
+    if (team == null) continue;
     final membership = await joinRepo.getEffectiveMembership(team.uuid, userId);
     if (TeamAuth.canUseCoachTools(team, userId, membership, installId)) return true;
   }

@@ -2,7 +2,7 @@ import '../../data/isar/models/join_request.dart';
 import '../../data/isar/models/team.dart';
 import 'team_auth.dart';
 
-enum TeamAccessLevel { owner, coach, parent, none }
+enum TeamAccessLevel { owner, coach, parent, pending, none }
 
 class TeamAccess {
   const TeamAccess({
@@ -28,8 +28,14 @@ TeamAccess resolveTeamAccess({
   final isOwner = team.ownerUserId != null && team.ownerUserId == currentUserId;
 
   JoinRequest? activeMembership;
-  if (membership != null && TeamAuth.isActiveMembership(membership.status)) {
-    activeMembership = membership;
+  JoinRequest? pendingMembership;
+  if (membership != null) {
+    if (TeamAuth.isActiveMembership(membership.status)) {
+      activeMembership = membership;
+    } else if (membership.status == JoinRequestStatus.pending) {
+      pendingMembership = membership;
+    }
+    // revoked/rejected: no activeMembership, no pendingMembership -> none
   }
 
   if (isOwner) {
@@ -60,6 +66,16 @@ TeamAccess resolveTeamAccess({
       isActiveMember: true,
       canManageGames: false,
       canManageSchedule: true,
+      canManageRoster: false,
+    );
+  }
+
+  if (pendingMembership != null) {
+    return const TeamAccess(
+      level: TeamAccessLevel.pending,
+      isActiveMember: false,
+      canManageGames: false,
+      canManageSchedule: false,
       canManageRoster: false,
     );
   }

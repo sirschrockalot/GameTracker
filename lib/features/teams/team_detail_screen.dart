@@ -65,7 +65,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final teamsAsync = ref.watch(teamsStreamProvider);
+    final teamsAsync = ref.watch(visibleTeamsStreamProvider);
     final playersAsync = ref.watch(playersFutureProvider);
 
     Team? team;

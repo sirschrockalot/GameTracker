@@ -44,7 +44,7 @@ class _GameDashboardScreenState extends ConsumerState<GameDashboardScreen> {
     final suggestedQuarter = ref.watch(suggestedQuarterProvider);
 
     if (gameUuid == null) {
-      final teamsAsync = ref.watch(teamsStreamProvider);
+      final teamsAsync = ref.watch(visibleTeamsStreamProvider);
       final allPlayers = ref.watch(playersFutureProvider).valueOrNull ?? [];
       return Scaffold(
         backgroundColor: Colors.transparent,

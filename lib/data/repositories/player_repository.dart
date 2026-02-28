@@ -67,6 +67,17 @@ class PlayerRepository {
         return true;
       });
 
+  /// Remove all players for a team (e.g. on membership revoke).
+  Future<void> deleteAllByTeamId(String teamId) async {
+    await _isar.writeTxn(() async {
+      final list = await _isar.players
+          .filter()
+          .teamIdEqualTo(teamId)
+          .findAll();
+      for (final p in list) await _isar.players.delete(p.id);
+    });
+  }
+
   Future<List<Player>> getByUuids(List<String> uuids) async {
     if (uuids.isEmpty) return [];
     final list = <Player>[];

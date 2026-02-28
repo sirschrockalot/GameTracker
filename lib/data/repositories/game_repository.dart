@@ -152,6 +152,17 @@ class GameRepository {
     });
   }
 
+  /// Remove all games for a team (e.g. on membership revoke).
+  Future<void> deleteAllByTeamId(String teamId) async {
+    await _isar.writeTxn(() async {
+      final list = await _isar.games
+          .filter()
+          .teamIdEqualTo(teamId)
+          .findAll();
+      for (final g in list) await _isar.games.delete(g.id);
+    });
+  }
+
   /// Upsert from server payload. Sets quartersPlayedJson from quarterLineups (never from server).
   Future<void> upsertFromServerGame(Map<String, dynamic> m) async {
     final uuid = m['uuid'] as String?;

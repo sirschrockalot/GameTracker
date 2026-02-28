@@ -34,7 +34,7 @@ class _UpwardLineupAppState extends ConsumerState<UpwardLineupApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // App foreground: refresh teams and pending notifications from backend.
+      ref.invalidate(membershipSyncProvider);
       ref.invalidate(refreshTeamsFromServerProvider);
       ref.invalidate(pendingNotificationsSummaryProvider);
     }

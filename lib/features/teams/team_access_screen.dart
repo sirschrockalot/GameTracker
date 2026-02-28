@@ -24,7 +24,7 @@ class TeamAccessScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final teams = ref.watch(teamsStreamProvider).valueOrNull ?? [];
+    final teams = ref.watch(visibleTeamsStreamProvider).valueOrNull ?? [];
     final team = teams.where((t) => t.uuid == teamUuid).firstOrNull;
     if (team == null) {
       return Scaffold(

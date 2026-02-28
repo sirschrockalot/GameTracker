@@ -39,7 +39,7 @@ class _WhosHereScreenState extends ConsumerState<WhosHereScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final teamsAsync = ref.watch(teamsStreamProvider);
+    final teamsAsync = ref.watch(visibleTeamsStreamProvider);
     final teamPlayersAsync = ref.watch(playersForTeamProvider(widget.teamUuid));
 
     Team? team;

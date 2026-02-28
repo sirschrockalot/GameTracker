@@ -23,6 +23,7 @@ const teamMemberSchema = new mongoose.Schema(
 
 teamMemberSchema.index({ teamId: 1, status: 1 });
 teamMemberSchema.index({ userId: 1, status: 1 });
+teamMemberSchema.index({ userId: 1, updatedAt: 1 });
 teamMemberSchema.index({ teamId: 1, updatedAt: 1 });
 teamMemberSchema.index({ userId: 1, teamId: 1 });
 teamMemberSchema.index(

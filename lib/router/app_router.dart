@@ -85,7 +85,7 @@ final goRouter = GoRouter(
         final membership = await container.read(
           userTeamMembershipProvider(teamUuid).future,
         );
-        if (membership.team == null) return null;
+        if (membership.team == null) return '/teams';
         if (membership.isOwner) return null; // owner -> team detail
         final m = membership.membership;
         if (m == null) return null; // no request -> team detail (e.g. owner only)

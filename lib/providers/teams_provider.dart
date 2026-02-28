@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
@@ -8,6 +10,7 @@ import '../data/repositories/team_repository.dart';
 import '../data/repositories/join_request_repository.dart';
 import '../data/sync/bootstrap_upsert.dart';
 import '../data/sync/game_sync.dart';
+import '../data/sync/membership_sync_service.dart';
 import 'current_user_provider.dart';
 import 'game_provider.dart';
 import 'isar_provider.dart';
@@ -19,22 +22,110 @@ DateTime? _parseDate(dynamic v) {
   return DateTime.tryParse(s);
 }
 
-/// Local teams stream (Isar-backed). UI should treat this as cached view;
-/// server is the source of truth for membership and team list.
+/// Last successful membership refresh (GET /me/memberships) time.
+final lastMembershipRefreshTimeProvider = StateProvider<DateTime?>((_) => null);
+
+/// Sync memberships from server, upsert into Isar, cleanup revoked teams. Run on launch + foreground + pull-to-refresh.
+final membershipSyncProvider = FutureProvider<void>((ref) async {
+  final baseUrl = ref.read(apiBaseUrlProvider);
+  if (baseUrl.isEmpty) return;
+
+  final client = ref.read(authenticatedHttpClientProvider);
+  final isar = await ref.read(isarProvider.future);
+  final currentUserId = ref.read(currentUserIdProvider);
+
+  await MembershipSyncService.refresh(client, isar, currentUserId);
+
+  ref.read(lastMembershipRefreshTimeProvider.notifier).state = DateTime.now();
+  ref.invalidate(allowedTeamIdsProvider);
+  ref.invalidate(teamsStreamProvider);
+});
+
+/// Allowed team IDs: active membership or owner. Single source for "team visibility" invariant.
+final allowedTeamIdsProvider = FutureProvider<Set<String>>((ref) async {
+  final isar = await ref.watch(isarProvider.future);
+  final userId = ref.watch(currentUserIdProvider);
+  final teamRepo = TeamRepository(isar);
+  final joinRepo = JoinRequestRepository(isar);
+  return MembershipSyncService.getAllowedTeamIds(isar, userId, teamRepo, joinRepo);
+});
+
+/// Stream of allowed team IDs (reactive to local membership + team changes).
+final allowedTeamIdsStreamProvider = StreamProvider<Set<String>>((ref) async* {
+  final isar = ref.watch(isarProvider).valueOrNull;
+  final userId = ref.watch(currentUserIdProvider);
+  if (isar == null) {
+    yield {};
+    return;
+  }
+  final joinRepo = JoinRequestRepository(isar);
+  final teamRepo = TeamRepository(isar);
+
+  Set<String> compute() async {
+    final approved = await joinRepo.listApprovedTeamIdsForUser(userId);
+    final teams = await teamRepo.getAll();
+    final ownerIds = teams
+        .where((t) => t.ownerUserId != null && t.ownerUserId == userId)
+        .map((t) => t.uuid)
+        .toSet();
+    return {...approved, ...ownerIds};
+  }
+
+  yield await compute();
+  await for (final _ in joinRepo.watchByUserId(userId)) {
+    yield await compute();
+  }
+});
+
+/// Local teams stream (Isar-backed). Raw list; filter by allowedTeamIds for visibility.
 final teamsStreamProvider = StreamProvider<List<Team>>((ref) {
   final isar = ref.watch(isarProvider).valueOrNull;
   if (isar == null) return Stream.value([]);
   return TeamRepository(isar).watchAll();
 });
 
-/// Debug: last successful /teams refresh time from server.
-final lastTeamsRefreshTimeProvider = StateProvider<DateTime?>((_) => null);
+/// Teams the user is allowed to see (active membership or owner). Invariant: only these appear in UI.
+final visibleTeamsStreamProvider = StreamProvider<List<Team>>((ref) {
+  final isar = ref.watch(isarProvider).valueOrNull;
+  final userId = ref.watch(currentUserIdProvider);
+  if (isar == null) return Stream.value([]);
+  final teamRepo = TeamRepository(isar);
+  final joinRepo = JoinRequestRepository(isar);
+
+  final controller = StreamController<List<Team>>.broadcast(sync: true);
+  Future<void> emit() async {
+    final teams = await teamRepo.getAll();
+    final approved = await joinRepo.listApprovedTeamIdsForUser(userId);
+    final ownerIds = teams
+        .where((t) => t.ownerUserId != null && t.ownerUserId == userId)
+        .map((t) => t.uuid)
+        .toSet();
+    final allowed = {...approved, ...ownerIds};
+    controller.add(teams.where((t) => allowed.contains(t.uuid)).toList());
+  }
+
+  final sub1 = teamRepo.watchAll().listen((_) => emit());
+  final sub2 = joinRepo.watchByUserId(userId).listen((_) => emit());
+  emit();
+
+  controller.onCancel = () {
+    sub1.cancel();
+    sub2.cancel();
+  };
+  return controller.stream;
+});
+
+/// Last API error message (debug).
+final lastApiErrorProvider = StateProvider<String?>((_) => null);
 
 /// Refresh teams from backend for the current user and upsert into Isar.
-/// Also promotes local pending membership to approved when server lists a team.
+/// Runs membership sync first so revoked teams are removed; then GET /teams (only returns allowed).
 final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
   final baseUrl = ref.read(apiBaseUrlProvider);
   if (baseUrl.isEmpty) return;
+
+  try {
+  await ref.read(membershipSyncProvider.future);
 
   final client = ref.read(authenticatedHttpClientProvider);
   final isar = await ref.read(isarProvider.future);
@@ -158,6 +249,11 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
     try {
       final response = await bootstrapDownload(client, teamId);
       await upsertBootstrapResponse(isar, response);
+      final team = await TeamRepository(isar).getByUuid(teamId);
+      if (team != null) {
+        team.lastSyncedAt = DateTime.now();
+        await isar.teams.put(team);
+      }
     } catch (_) {
       // Swallow errors – teams list should still be correct even if
       // bootstrap download fails (e.g. older backend without this endpoint).
@@ -173,5 +269,16 @@ final refreshTeamsFromServerProvider = FutureProvider<void>((ref) async {
     ref.invalidate(gamesStreamProvider);
   } catch (_) {}
 
+  } catch (e) {
+    ref.read(lastApiErrorProvider.notifier).state = e.toString();
+    rethrow;
+  }
   ref.read(lastTeamsRefreshTimeProvider.notifier).state = DateTime.now();
+});
+
+/// Pending sync outbox count (non-blocking banner when > 0).
+final pendingOutboxCountStreamProvider = StreamProvider<int>((ref) {
+  final isar = ref.watch(isarProvider).valueOrNull;
+  if (isar == null) return Stream.value(0);
+  return isar.syncOutboxItems.where().watch(fireImmediately: true).map((list) => list.length);
 });

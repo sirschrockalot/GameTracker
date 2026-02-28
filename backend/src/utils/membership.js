@@ -9,7 +9,12 @@ async function getActiveTeamIds(userId) {
   })
     .lean()
     .select('teamId');
-  return [...new Set(members.map((m) => m.teamId))];
+  const fromMembership = [...new Set(members.map((m) => m.teamId))];
+  const ownerTeams = await Team.find({ ownerUserId: userId, deletedAt: null })
+    .lean()
+    .select('uuid');
+  const ownerIds = ownerTeams.map((t) => t.uuid);
+  return [...new Set([...fromMembership, ...ownerIds])];
 }
 
 async function isOwner(teamId, userId) {

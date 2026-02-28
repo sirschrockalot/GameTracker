@@ -32,20 +32,20 @@ router.get('/pull', async (req, res, next) => {
   try {
     const userId = req.userId;
     const since = req.query.since ? new Date(req.query.since) : new Date(0);
-    const teamIds = await getActiveTeamIds(userId);
+    const allowedTeamIds = await getActiveTeamIds(userId);
     const serverTime = new Date();
 
-    const [teams, teamMembers, scheduleEvents, games] = await Promise.all([
-      Team.find({ uuid: { $in: teamIds }, updatedAt: { $gt: since } }).lean(),
-      TeamMember.find({ teamId: { $in: teamIds }, updatedAt: { $gt: since } }).lean(),
-      ScheduleEvent.find({ teamId: { $in: teamIds }, updatedAt: { $gt: since } }).lean(),
-      Game.find({ teamId: { $in: teamIds }, updatedAt: { $gt: since } }).lean(),
+    const [teams, teamMembersForCaller, scheduleEvents, games] = await Promise.all([
+      Team.find({ uuid: { $in: allowedTeamIds }, updatedAt: { $gt: since } }).lean(),
+      TeamMember.find({ userId, updatedAt: { $gt: since } }).lean(),
+      ScheduleEvent.find({ teamId: { $in: allowedTeamIds }, updatedAt: { $gt: since } }).lean(),
+      Game.find({ teamId: { $in: allowedTeamIds }, updatedAt: { $gt: since } }).lean(),
     ]);
 
     res.json({
       serverTime: serverTime.toISOString(),
       teams: teams.map(toTeamJson),
-      teamMembers: teamMembers.map(toMemberJson),
+      teamMembers: teamMembersForCaller.map(toMemberJson),
       scheduleEvents: scheduleEvents.map(toEventJson),
       games: games.map(toGameJson),
     });

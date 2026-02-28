@@ -104,4 +104,15 @@ class ScheduleRepository {
         await _isar.scheduleEvents.delete(e.id);
         return true;
       });
+
+  /// Remove all schedule events for a team (e.g. on membership revoke).
+  Future<void> deleteAllByTeamId(String teamId) async {
+    await _isar.writeTxn(() async {
+      final list = await _isar.scheduleEvents
+          .filter()
+          .teamIdEqualTo(teamId)
+          .findAll();
+      for (final e in list) await _isar.scheduleEvents.delete(e.id);
+    });
+  }
 }

@@ -104,7 +104,7 @@ class GameSummaryScreen extends ConsumerWidget {
     final repo = GameRepository(isar);
     final game = await repo.getByUuid(gameUuid);
     final teamId = game?.teamId;
-    final teams = ref.read(teamsStreamProvider).valueOrNull ?? [];
+    final teams = ref.read(visibleTeamsStreamProvider).valueOrNull ?? [];
     final team = teamId != null ? teams.where((t) => t.uuid == teamId).firstOrNull : null;
     if (team != null && team.syncEnabled) {
       try {

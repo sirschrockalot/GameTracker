@@ -25,6 +25,32 @@ class JoinRequestRepository {
     });
   }
 
+  Future<List<JoinRequest>> listByUserId(String userId) async {
+    return _isar.joinRequests
+        .filter()
+        .userIdEqualTo(userId)
+        .sortByUpdatedAtDesc()
+        .findAll();
+  }
+
+  Stream<List<JoinRequest>> watchByUserId(String userId) {
+    return _isar.joinRequests
+        .filter()
+        .userIdEqualTo(userId)
+        .sortByUpdatedAtDesc()
+        .watch(fireImmediately: true);
+  }
+
+  /// Team IDs where this user has approved (active) membership.
+  Future<List<String>> listApprovedTeamIdsForUser(String userId) async {
+    final list = await _isar.joinRequests
+        .filter()
+        .userIdEqualTo(userId)
+        .statusEqualTo(JoinRequestStatus.approved)
+        .findAll();
+    return list.map((r) => r.teamId).toList();
+  }
+
   Future<List<JoinRequest>> listPendingByTeamId(String teamId) async {
     return _isar.joinRequests
         .filter()

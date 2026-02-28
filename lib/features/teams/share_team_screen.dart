@@ -34,7 +34,7 @@ class ShareTeamScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final teamsAsync = ref.watch(teamsStreamProvider);
+    final teamsAsync = ref.watch(visibleTeamsStreamProvider);
     final teams = teamsAsync.valueOrNull ?? [];
     final team = teams.where((t) => t.uuid == teamUuid).firstOrNull;
 

@@ -25,7 +25,7 @@ class _CoachScheduleScreenState extends ConsumerState<CoachScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final teamsAsync = ref.watch(teamsStreamProvider);
+    final teamsAsync = ref.watch(visibleTeamsStreamProvider);
     final teamUuid = _selectedTeamUuid;
 
     if (teamUuid == null) {
@@ -187,7 +187,7 @@ class _EventListForTeamState extends ConsumerState<_EventListForTeam> {
 
   @override
   Widget build(BuildContext context) {
-    final teamsAsync = ref.watch(teamsStreamProvider);
+    final teamsAsync = ref.watch(visibleTeamsStreamProvider);
     final teams = teamsAsync.valueOrNull ?? [];
     final team = teams.where((t) => t.uuid == widget.teamUuid).firstOrNull;
     final teamName = team?.name ?? 'Team';
